@@ -11,9 +11,14 @@ export class CustomExceptionFilter implements ExceptionFilter {
     const { httpAdapter } = this.httpAdapterHost;
     let message = "Internal server error";
     const ctx = host.switchToHttp();
+    console.log( exception);
 
     if (exception.code === "P2002") {
       message = "User with this email already exists.";
+    }
+
+    if (exception.status) {
+      message = exception.message;
     }
 
     const httpStatus = exception instanceof HttpException
