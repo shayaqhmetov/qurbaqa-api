@@ -40,8 +40,10 @@ docker run --name $DOCKER_IMAGE_NAME \
         -e KC_DB_USERNAME=${KC_DB_USERNAME} \
         -e KC_DB_PASSWORD=${KC_DB_PASSWORD} \
         -e KC_HOSTNAME=${KC_HOSTNAME} \
+        -e KC_HTTP_ENABLED=true \
+        -e KC_PROXY=edge \
         --network qurbaqa \
         $DOCKER_IMAGE_NAME:latest \
-        start --optimized --hostname=localhost
+        start-dev
 
 echo "Keycloak container $DOCKER_IMAGE_NAME is running on port 8443."
