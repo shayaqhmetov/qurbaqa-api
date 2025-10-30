@@ -1,0 +1,82 @@
+services:
+  app:
+    image: qurbaqa-api:latest
+    container_name: qurbaqa-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      # Remove keycloak dependency for faster startup
+      # keycloak:
+      #   condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://qurbaqa_user:qurbaqa_password@db:5432/qurbaqa_db
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=qurbaqa-realm
+      - KEYCLOAK_CLIENT_ID=qurbaqa-client
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - qurbaqa-api
+  db:
+    image: postgres:15-alpine
+    container_name: qurbaqa-db
+    environment:
+      - POSTGRES_USER=qurbaqa_user
+      - POSTGRES_PASSWORD=qurbaqa_password
+      - POSTGRES_DB=qurbaqa_db
+    volumes:
+      - qurbaqa-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - qurbaqa-api
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qurbaqa_user -d qurbaqa_db"]
+      interval: 3s
+      timeout: 2s
+      retries: 3
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.0.1
+    container_name: qurbaqa-keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://db:5432/qurbaqa_db
+      - KC_DB_USERNAME=qurbaqa_user
+      - KC_DB_PASSWORD=qurbaqa_password
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db  # Simple dependency without health check
+    networks:
+      - qurbaqa-api
+    # Remove problematic health check for now
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+    command: start-dev
+    
+networks:
+  qurbaqa-api:
+    driver: bridge
+
+volumes:
+  qurbaqa-db-data:
+    driver: local
