@@ -42,7 +42,6 @@ docker run --name $DOCKER_IMAGE_NAME \
         -e KC_HOSTNAME=${KC_HOSTNAME} \
         -e KC_HTTP_ENABLED=true \
         -e KC_PROXY=edge \
-        --network qurbaqa \
         $DOCKER_IMAGE_NAME:latest \
         start-dev
 

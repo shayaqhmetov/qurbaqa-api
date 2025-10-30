@@ -19,4 +19,4 @@ import keycloakConfiguration from './configurations/keycloak.configuration';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -4,11 +4,17 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import * as ErrorMessages from '../messages/error.messages';
 import { KeycloakSignUpDTO } from './dtos/keycloak.dto';
+
+export class KeycloakCredentialDTO {
+  identifier: string;
+  password: string;
+}
 
 @Injectable()
 export class KeycloakAdminService {
@@ -96,7 +102,7 @@ export class KeycloakAdminService {
         },
       );
       const responseData = response.data == '' ? {} : JSON.parse(response.data);
-      if (responseData.errorMessage) {
+      if (responseData.error || responseData.errorMessage) {
         this.logger.error(
           'Error creating user in Keycloak:',
           responseData.errorMessage,
@@ -128,37 +134,40 @@ export class KeycloakAdminService {
     }
   }
 
-  // async login(credentials: {
-  //   identifier: string;
-  //   password: string;
-  // }): Promise<TokenResponse> {
-  //   try {
-  //     const response = await AxiosService.getAxiosInstance().post(
-  //       `${this.configService.get("app.authenticationServerUrl")}/realms/${KEYCLOAK_REALM_NAME}/protocol/openid-connect/token`,
-  //       new URLSearchParams({
-  //         client_id: KEYCLOAK_CLIENT_ID,
-  //         client_secret: KEYCLOAK_CLIENT_SECRET,
-  //         grant_type: "password",
-  //         username: credentials.identifier,
-  //         password: credentials.password,
-  //       }).toString(),
-  //       {
-  //         headers: {
-  //           "Content-Type": "application/x-www-form-urlencoded",
-  //         },
-  //       },
-  //     );
+  async login(
+    credentials: KeycloakCredentialDTO,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const response = await this.requestService.post(
+      `${this.configService.get('authenticationServerUrl')}/realms/${this.configService.get('realmName')}/protocol/openid-connect/token`,
+      new URLSearchParams({
+        client_id: this.configService.get('clientId'),
+        client_secret: this.configService.get('clientSecret'),
+        grant_type: 'password',
+        username: credentials.identifier,
+        password: credentials.password,
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
+    const responseData = JSON.parse(response.data);
+    if (responseData.error) {
+      this.logger.error(
+        'Keycloak login error:',
+        responseData.error_description,
+      );
+      throw new UnauthorizedException(responseData.error_description);
+    }
 
-  //     this.logger.log("User successfully signed in!");
-  //     return {
-  //       access_token: response.data.access_token,
-  //       refresh_token: response.data.refresh_token,
-  //     };
-  //   } catch {
-  //     this.logger.error(ErrorMessages.keycloakInvalidCredentials);
-  //     throw new UnauthorizedException(ErrorMessages.keycloakInvalidCredentials);
-  //   }
-  // }
+    this.logger.log('User successfully signed in!');
+    return {
+      access_token: responseData.access_token,
+      refresh_token: responseData.refresh_token,
+    };
+  }
+
   // async exchangeMicrosoftTokenForKeycloak(
   //   microsoftToken: string,
   // ): Promise<TokenResponse> {

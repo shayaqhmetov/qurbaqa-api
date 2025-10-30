@@ -1,6 +1,13 @@
-import { HttpAdapterHost } from "@nestjs/core";
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
-import { } from "@nestjs/common/exceptions";
+import { HttpAdapterHost } from '@nestjs/core';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { } from '@nestjs/common/exceptions';
 
 @Catch()
 export class CustomExceptionFilter implements ExceptionFilter {
@@ -9,24 +16,31 @@ export class CustomExceptionFilter implements ExceptionFilter {
 
   catch(exception: any, host: ArgumentsHost) {
     const { httpAdapter } = this.httpAdapterHost;
-    let message = "Internal server error";
+    let message = 'Internal server error';
     const ctx = host.switchToHttp();
-    console.log( exception);
+    console.log(exception);
 
-    if (exception.code === "P2002") {
-      message = "User with this email already exists.";
+    if (exception.code === 'P2002') {
+      message = 'User with this email already exists.';
     }
 
     if (exception.status) {
       message = exception.message;
+      if (exception.status === 400) {
+        message = exception.response?.message || message;
+      }
     }
 
-    const httpStatus = exception instanceof HttpException
-      ? exception.getStatus()
-      : HttpStatus.INTERNAL_SERVER_ERROR;
+    const httpStatus =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    this.logger.error(`Status ${httpStatus} Error: ${message}`, exception.stack);
-    
+    this.logger.error(
+      `Status ${httpStatus} Error: ${message}`,
+      exception.stack,
+    );
+
     const responseBody = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
