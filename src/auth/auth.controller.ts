@@ -34,6 +34,13 @@ export class AuthController {
     return this.userService.createUser(createUserDto);
   }
 
+  // TODO: Remove user endpoint need to be removed
+  @Post('remove-user')
+  @HttpCode(HttpStatus.OK)
+  async removeUser(@Body() createUserDto: CreateUserDto) {
+    return this.userService.removeUser(createUserDto);
+  }
+
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)

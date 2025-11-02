@@ -50,9 +50,15 @@ export class KeycloakAdminService {
         },
       );
       response.data = JSON.parse(response.data);
-
-      this.token = response.data.access_token;
-      this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
+      if (response.data.error) {
+        this.logger.error(
+          'Failed to obtain admin token from Keycloak',
+          response.data.error,
+        );
+      } else {
+        this.token = response.data.access_token;
+        this.tokenExpiry = Date.now() + response.data.expires_in * 1000;
+      }
     } catch (err) {
       throw new BadRequestException(
         ErrorMessages.failedToConnectToKeycloak(err.message as string),
@@ -60,17 +66,13 @@ export class KeycloakAdminService {
     }
     if (response.data.error) {
       this.logger.error('Failed to obtain admin token from Keycloak');
-      this.logger.error(JSON.parse(response.data).error_description);
-      throw new BadRequestException(
-        ErrorMessages.failedToConnectToKeycloak(
-          JSON.parse(response.data).error_description,
-        ),
-      );
+      throw new InternalServerErrorException(ErrorMessages.serverError);
     }
     return response.data.access_token;
   }
 
   async createUser(userData: KeycloakSignUpDTO): Promise<{ id: string }> {
+    let response = null;
     try {
       const adminToken = await this.getAdminToken();
       const payload = {
@@ -91,7 +93,7 @@ export class KeycloakAdminService {
         Buffer.from(adminToken.split('.')[1], 'base64').toString(),
       );
       console.log(a.realm_access, a.resource_access);
-      const response = await this.requestService.post(
+      response = await this.requestService.post(
         `/admin/realms/${this.configService.get('realmName')}/users`,
         JSON.stringify(payload),
         {
@@ -105,18 +107,10 @@ export class KeycloakAdminService {
       if (responseData.error || responseData.errorMessage) {
         this.logger.error(
           'Error creating user in Keycloak:',
-          responseData.errorMessage,
+          responseData.error,
         );
-        throw new InternalServerErrorException(responseData.errorMessage);
+        response.data = responseData;
       }
-
-      const locationHeader = response.headers['location'];
-      let userId = '';
-      if (locationHeader) {
-        userId = locationHeader.split('/').pop();
-      }
-      this.logger.log('User created successfully');
-      return { id: userId };
     } catch (error) {
       if (error.errorMessage) {
         this.logger.error(
@@ -130,6 +124,37 @@ export class KeycloakAdminService {
         throw new BadRequestException(ErrorMessages.keycloakUserAlreadyExists);
       }
       this.logger.error(error.message);
+      throw new InternalServerErrorException(error.message);
+    }
+
+    if (response.data.error || response.data.errorMessage) {
+      this.logger.error('Error creating user in Keycloak');
+      throw new InternalServerErrorException(ErrorMessages.serverError);
+    }
+    const locationHeader = response.headers['location'];
+    let userId = '';
+    if (locationHeader) {
+      userId = locationHeader.split('/').pop();
+    }
+    this.logger.log('User created successfully');
+    return { id: userId };
+  }
+
+  async removeUser(uuid: string): Promise<void> {
+    try {
+      const adminToken = await this.getAdminToken();
+      await this.requestService.delete(
+        `/admin/realms/${this.configService.get('realmName')}/users/${uuid}`,
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      this.logger.log('User removed successfully from Keycloak:', uuid);
+    } catch (error) {
+      this.logger.error('Error removing user from Keycloak:', error.message);
       throw new InternalServerErrorException(error.message);
     }
   }

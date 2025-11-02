@@ -1,8 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { NotFoundException } from '@nestjs/common/exceptions';
+import {
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common/exceptions';
 
 import { PrismaClientService } from '@/clients/prisma.client';
 import { CreateAccountDto } from './dtos/account.dto';
+import { UserService } from '@/auth/user/user.service';
+import * as ErrorMessages from '@/messages/error.messages';
 
 @Injectable()
 export default class AccountService {
@@ -10,6 +15,8 @@ export default class AccountService {
   constructor(
     @Inject(PrismaClientService)
     protected readonly prismaClientService: PrismaClientService,
+    @Inject(UserService)
+    protected readonly userService: UserService,
   ) { }
 
   async getAccountById(accountId: string) {
@@ -24,7 +31,22 @@ export default class AccountService {
     return account;
   }
 
-  async createAccount(createAccountDto: CreateAccountDto) {
+  async createAccount(createAccountDto: CreateAccountDto, userId: string) {
+    console.log('Creating account for user ID:', userId);
+    const user = await this.userService.getUserByKeycloakId(userId);
+    if (!user) {
+      this.logger.error(`User with Keycloak ID: ${userId} not found`);
+      throw new InternalServerErrorException(ErrorMessages.serverError);
+    }
+    const currency = await this.prismaClientService.currency.findUnique({
+      where: { code: createAccountDto.currencyCode },
+    });
+    if (!currency) {
+      this.logger.error(
+        `Currency with code: "${createAccountDto.currencyCode}" not found`,
+      );
+      throw new InternalServerErrorException(ErrorMessages.serverError);
+    }
     const account = await this.prismaClientService.account.create({
       data: {
         name: createAccountDto.name,
@@ -37,14 +59,20 @@ export default class AccountService {
         createdAt: new Date(),
         updatedAt: new Date(),
         user: {
-          connect: { id: createAccountDto.userId },
+          connect: { id: user.id },
         },
         currency: {
-          connect: { code: createAccountDto.currencyCode },
+          connect: { id: currency.id },
         },
       },
     });
     this.logger.log(`Created new account with ID: ${account.id}`, account);
     return account;
+  }
+
+  public async getAllAccounts() {
+    const accounts = await this.prismaClientService.account.findMany();
+    this.logger.log(`Fetched all accounts, count: ${accounts.length}`);
+    return accounts;
   }
 }

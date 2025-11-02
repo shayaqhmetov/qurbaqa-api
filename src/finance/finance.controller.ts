@@ -13,13 +13,22 @@ export class FinanceController {
     return account;
   }
 
+  @Get('accounts')
+  async getAccounts() {
+    const accounts = await this.accountService.getAllAccounts();
+    return accounts;
+  }
+
   @Post('account')
   async createAccount(
     @CurrentUser() user: any,
     @Body() createAccountDto: CreateAccountDto,
   ) {
     console.log('Current User:', user);
-    // const account = await this.accountService.createAccount(createAccountDto);
-    return user;
+    const account = await this.accountService.createAccount(
+      createAccountDto,
+      user.sub,
+    );
+    return account;
   }
 }

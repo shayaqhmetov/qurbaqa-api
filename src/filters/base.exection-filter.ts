@@ -21,7 +21,8 @@ export class CustomExceptionFilter implements ExceptionFilter {
     console.log(exception);
 
     if (exception.code === 'P2002') {
-      message = 'User with this email already exists.';
+      this.logger.error(`Database error: ${exception.message}`);
+      message = 'Entry already exists in the database';
     }
 
     if (exception.status) {
