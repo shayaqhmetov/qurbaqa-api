@@ -193,6 +193,79 @@ export class KeycloakAdminService {
     };
   }
 
+  async logout(refreshToken: string): Promise<void> {
+    try {
+      const response = await this.requestService.post(
+        `${this.configService.get('authenticationServerUrl')}/realms/${this.configService.get('realmName')}/protocol/openid-connect/logout`,
+        new URLSearchParams({
+          client_id: this.configService.get('clientId'),
+          client_secret: this.configService.get('clientSecret'),
+          refresh_token: refreshToken,
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+      const responseData = response.data ? JSON.parse(response.data) : {};
+      if (responseData.error) {
+        this.logger.error(
+          'Keycloak logout error:',
+          responseData.error_description,
+        );
+        throw new BadRequestException(responseData.error_description);
+      }
+      this.logger.log('User successfully logged out');
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      this.logger.error('Error during logout:', error.message);
+      throw new InternalServerErrorException('Failed to logout from Keycloak');
+    }
+  }
+
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    try {
+      const response = await this.requestService.post(
+        `${this.configService.get('authenticationServerUrl')}/realms/${this.configService.get('realmName')}/protocol/openid-connect/token`,
+        new URLSearchParams({
+          client_id: this.configService.get('clientId'),
+          client_secret: this.configService.get('clientSecret'),
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+        }).toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+      const responseData = JSON.parse(response.data);
+      if (responseData.error) {
+        this.logger.error(
+          'Keycloak refresh token error:',
+          responseData.error_description,
+        );
+        throw new UnauthorizedException(responseData.error_description);
+      }
+      this.logger.log('Token refreshed successfully');
+      return {
+        access_token: responseData.access_token,
+        refresh_token: responseData.refresh_token,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error('Error refreshing token:', error.message);
+      throw new UnauthorizedException('Refresh token expired or invalid');
+    }
+  }
+
   // async exchangeMicrosoftTokenForKeycloak(
   //   microsoftToken: string,
   // ): Promise<TokenResponse> {

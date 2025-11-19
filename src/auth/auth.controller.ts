@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 
 import { LoginDto } from '@/auth/dtos/auth.dto';
+import { LogoutDto } from '@/auth/dtos/logout.dto';
+import { RefreshDto } from '@/auth/dtos/refresh.dto';
 import { UserService } from './user/user.service';
 import { CreateUserDto } from './user/dtos/create-user.dto';
 import { KeycloakAdminService } from '@/keycloak/keycloak.service';
@@ -51,5 +53,19 @@ export class AuthController {
     });
 
     return result;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Body() logoutDto: LogoutDto) {
+    await this.keycloakService.logout(logoutDto.refresh_token);
+    return { message: 'Successfully logged out' };
+  }
+
+  @Post('refresh')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() refreshDto: RefreshDto) {
+    return await this.keycloakService.refreshToken(refreshDto.refresh_token);
   }
 }
