@@ -57,7 +57,7 @@ export class KeycloakGuard implements CanActivate {
 
       request['user'] = payload;
       return true;
-    } catch {
+    } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

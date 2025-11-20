@@ -2,8 +2,10 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import AccountService from './account.service';
 import { CreateAccountDto } from './dtos/account.dto';
 import { CurrentUser } from '@/auth/user/user.decorator';
+import { RequireModule } from '@/modules/guards/module-access.guard';
 
 @Controller('finance')
+@RequireModule('FINANCE')
 export class FinanceController {
   constructor(protected readonly accountService: AccountService) { }
 

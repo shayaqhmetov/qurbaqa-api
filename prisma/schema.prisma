@@ -7,3 +7,337 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// Combined schema for generation
+
+// --- auth.prisma ---
+// Authentication related models
+
+model User {
+  id          String    @id @default(cuid())
+  keycloakId  String    @unique @default("no keycloakId") @db.VarChar(36)
+  email       String    @unique @db.VarChar(255)
+  username    String?   @unique @default("no username") @db.VarChar(100)
+  firstName   String?   @db.VarChar(100)
+  lastName    String?   @db.VarChar(100)
+  timezone    String    @default("UTC") @db.VarChar(50)
+  locale      String    @default("en") @db.VarChar(10)
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  accounts     Account[]
+  transactions Transaction[]
+  transfers    Transfer[]
+  budgets      Budget[]
+  goals        Goal[]
+  userModules  UserModule[]
+}
+
+// --- finance.prisma ---
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT
+  CASH
+  INVESTMENT
+  OTHER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  CLEARED
+  RECONCILED
+}
+
+enum BudgetPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum TransferStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Account {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  name       String   @db.VarChar(100)
+  currency   Currency @relation(fields: [currencyId], references: [id])
+  currencyId String
+
+  type                 AccountType            @default(CHECKING)
+  balance              Decimal?               @db.Decimal(15,2)
+  accountNumber        String?                @db.VarChar(50)
+  institutionId        String?                @db.VarChar(50)
+  lastSyncAt           DateTime?
+  transactions         Transaction[]          @relation("accountTransactions")
+  incomingTransfers    Transfer[]             @relation("incomingTransfers")
+  outgoingTransfers    Transfer[]             @relation("outgoingTransfers")
+  isArchived           Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  recurringTransaction RecurringTransaction[]
+
+  @@index([userId])
+  @@index([userId, isArchived])
+}
+
+model CurrencyRate {
+  id         String    @id @default(cuid())
+  base       String    @db.VarChar(3)
+  quote      String    @db.VarChar(3)
+  rate       Decimal   @db.Decimal(15,6)
+  fetchedAt  DateTime  @default(now())
+  currencyId String?
+  currency   Currency? @relation(fields: [currencyId], references: [id])
+
+  @@unique([base, quote])
+  @@index([base, quote, fetchedAt])
+}
+
+model Currency {
+  id          String         @id @default(cuid())
+  code        String         @unique
+  name        String
+  symbol      String
+  accounts    Account[]
+  rates       CurrencyRate[]
+  Transaction Transaction[]
+}
+
+model Transaction {
+  id          String                @id @default(cuid())
+  accountId   String
+  account     Account               @relation("accountTransactions", fields: [accountId], references: [id])
+  amount      Decimal               @db.Decimal(15,2)
+  category    Category              @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  currencyId  String?
+  currency    Currency?             @relation(fields: [currencyId], references: [id])
+  type        TransactionType       @default(EXPENSE)
+  status      TransactionStatus     @default(CLEARED)
+  description String?               @db.VarChar(500)
+  date        DateTime              @default(now())
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  splitted    Boolean               @default(false)
+  splits      TransactionCategory[]
+  tags        TransactionTag[]
+  attachments Attachment[]
+  recurringId String?
+  recurring   RecurringTransaction? @relation(fields: [recurringId], references: [id])
+  note        String?               @db.VarChar(1000)
+  isDeleted   Boolean               @default(false)
+  user        User?                 @relation(fields: [userId], references: [id])
+  userId      String?
+
+  @@index([accountId, date])
+  @@index([userId, date])
+  @@index([categoryId])
+  @@index([type, status])
+}
+
+model Tag {
+  id   String           @id @default(cuid())
+  name String           @unique @db.VarChar(50)
+  color String?         @db.VarChar(7)
+  txs  TransactionTag[]
+}
+
+model TransactionCategory {
+  id            String      @id @default(cuid())
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  amount        Decimal     @db.Decimal(15,2)
+
+  @@unique([transactionId, categoryId])
+}
+
+model TransactionTag {
+  id            String      @id @default(cuid())
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+  tag           Tag         @relation(fields: [tagId], references: [id])
+  tagId         String
+
+  @@unique([transactionId, tagId])
+}
+
+model Transfer {
+  id            String        @id @default(cuid())
+  user          User          @relation(fields: [userId], references: [id])
+  userId        String
+  fromAccount   Account       @relation("outgoingTransfers", fields: [fromAccountId], references: [id])
+  fromAccountId String
+  toAccount     Account       @relation("incomingTransfers", fields: [toAccountId], references: [id])
+  toAccountId   String
+  amount        Decimal       @db.Decimal(15,2)
+  exchangeRate  Decimal?      @db.Decimal(10,6)
+  fee           Decimal?      @db.Decimal(15,2)
+  status        TransferStatus @default(PENDING)
+  currencyId    String?
+  rateId        String?
+  executedAt    DateTime      @default(now())
+  description   String?       @db.VarChar(500)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
+}
+
+model RecurringTransaction {
+  id          String        @id @default(cuid())
+  account     Account       @relation(fields: [accountId], references: [id])
+  accountId   String
+  amount      Decimal       @db.Decimal(15,2)
+  interval    String        @db.VarChar(20)
+  nextRunAt   DateTime
+  endsAt      DateTime?
+  active      Boolean       @default(true)
+  description String?       @db.VarChar(500)
+  lastRunAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Transaction Transaction[]
+
+  @@index([accountId])
+  @@index([active, nextRunAt])
+}
+
+model Attachment {
+  id            String      @id @default(cuid())
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+  url           String      @db.VarChar(500)
+  filename      String      @db.VarChar(255)
+  size          Int?
+  mimeType      String?     @db.VarChar(100)
+  createdAt     DateTime    @default(now())
+
+  @@index([transactionId])
+}
+
+model Category {
+  id           String                @id @default(cuid())
+  name         String                @unique @db.VarChar(100)
+  description  String?               @db.VarChar(500)
+  slug         String                @unique @db.VarChar(100)
+  color        String?               @db.VarChar(7)
+  icon         String?               @db.VarChar(50)
+  parentId     String?
+  parent       Category?             @relation("CategoryChildren", fields: [parentId], references: [id])
+  children     Category[]            @relation("CategoryChildren")
+  isActive     Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  transactions TransactionCategory[]
+  Transaction  Transaction[]
+  budgets      Budget[]
+  goals        Goal[]
+
+  @@index([parentId])
+  @@index([isActive])
+}
+
+model Budget {
+  id         String       @id @default(cuid())
+  user       User         @relation(fields: [userId], references: [id])
+  userId     String
+  name       String       @db.VarChar(100)
+  amount     Decimal      @db.Decimal(15,2)
+  period     BudgetPeriod @default(MONTHLY)
+  category   Category?    @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  startDate  DateTime
+  endDate    DateTime?
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([userId, period])
+  @@index([isActive])
+}
+
+model Goal {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  name          String    @db.VarChar(100)
+  description   String?   @db.VarChar(500)
+  targetAmount  Decimal   @db.Decimal(15,2)
+  currentAmount Decimal   @db.Decimal(15,2) @default(0)
+  targetDate    DateTime?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  isActive      Boolean   @default(true)
+  isCompleted   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([isActive, isCompleted])
+}
+
+// --- module.prisma ---
+
+enum ModuleType {
+  FINANCE
+  FOOD
+}
+
+enum ModuleStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Module {
+  id          String     @id @default(cuid())
+  type        ModuleType @unique
+  name        String     @db.VarChar(100)
+  description String?    @db.Text
+  icon        String?    @db.VarChar(50)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  userModules UserModule[]
+
+  @@map("modules")
+}
+
+model UserModule {
+  id         String       @id @default(cuid())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  module     Module       @relation(fields: [moduleId], references: [id])
+  moduleId   String
+  status     ModuleStatus @default(ACTIVE)
+  attachedAt DateTime     @default(now())
+  detachedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([userId, moduleId])
+  @@index([userId, status])
+  @@map("user_modules")
+}
