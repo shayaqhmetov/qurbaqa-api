@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ModuleService } from '../module.service';
+import * as MESSAGES from '@/messages/error.messages';
 
 export const REQUIRED_MODULE_KEY = 'requiredModule';
 export const RequireModule = (moduleType: string) =>
@@ -43,9 +44,7 @@ export class ModuleAccessGuard implements CanActivate {
 
     if (!hasAccess) {
       // Import error message
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { moduleAccessDenied } = require('@/messages/error.messages');
-      throw new ForbiddenException(moduleAccessDenied(requiredModule));
+      throw new ForbiddenException(MESSAGES.moduleAccessDenied(requiredModule));
     }
 
     return true;

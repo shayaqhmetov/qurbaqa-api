@@ -71,7 +71,11 @@ export default class AccountService {
   }
 
   public async getAllAccounts() {
-    const accounts = await this.prismaClientService.account.findMany();
+    const accounts = await this.prismaClientService.account.findMany({
+      include: {
+        currency: true,
+      },
+    });
     this.logger.log(`Fetched all accounts, count: ${accounts.length}`);
     return accounts;
   }

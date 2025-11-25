@@ -1,12 +1,11 @@
 import { ValidationPipe, Logger } from '@nestjs/common';
-import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { networkInterfaces } from 'os';
 
 import { AppModule } from './app.module';
 import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './response.interceptor';
-import { KeycloakGuard } from './keycloak/keycloak.guard';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -26,7 +25,6 @@ async function bootstrap() {
   });
 
   const httpAdapter = app.get(HttpAdapterHost);
-  const reflector = new Reflector();
 
   app.useGlobalFilters(new CustomExceptionFilter(httpAdapter));
   app.useGlobalInterceptors(new ResponseInterceptor());
@@ -37,7 +35,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.useGlobalGuards(new KeycloakGuard(reflector, config));
 
   const port = config.get<number>('PORT', 3000);
   const host = config.get<string>('HOST', '0.0.0.0');

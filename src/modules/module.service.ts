@@ -153,9 +153,17 @@ export class ModuleService {
     userId: string,
     moduleType: ModuleType,
   ): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { keycloakId: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(MODULES_MESSAGES.USER_NOT_FOUND(userId));
+    }
+
     const userModule = await this.prisma.userModule.findFirst({
       where: {
-        userId,
+        userId: user.id,
         module: { type: moduleType },
         status: ModuleStatus.ACTIVE,
       },

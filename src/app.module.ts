@@ -9,6 +9,7 @@ import { ModuleManagementModule } from './modules/module.module';
 import { ConfigModule } from '@nestjs/config';
 import keycloakConfiguration from './configurations/keycloak.configuration';
 import { ModuleAccessGuard } from './modules/guards/module-access.guard';
+import { KeycloakGuard } from './keycloak/keycloak.guard';
 
 @Module({
   imports: [
@@ -23,6 +24,10 @@ import { ModuleAccessGuard } from './modules/guards/module-access.guard';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: KeycloakGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: ModuleAccessGuard,
