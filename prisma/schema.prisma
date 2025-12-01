@@ -341,3 +341,25 @@ model UserModule {
   @@index([userId, status])
   @@map("user_modules")
 }
+
+model Translation {
+  id         BigInt   @id @default(autoincrement())
+  entityType String   @db.Text
+  entityId   BigInt
+  field      String   @db.Text
+  locale     String   @db.Text
+  value      String   @db.Text
+  updatedAt  DateTime @default(now())
+  source     String   @default("manual") @db.Text
+
+  @@index([entityType, entityId], name: "idx_trans_entity")
+  @@index([entityType, entityId, field, locale], name: "idx_trans_entity_field_locale")
+}
+
+model Language {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(10)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "en": {
+      "type": "FINANCE",
+      "name": "Finance Management",
+      "description": "Manage your accounts, transactions, budgets, and financial goals",
+      "icon": "cash-outline"
+    },
+    "ru": {
+      "type": "FINANCE",
+      "name": "Управление финансами",
+      "description": "Управляйте своими счетами, транзакциями, бюджетами и финансовыми целями",
+      "icon": "cash-outline"
+    }
+  },
+  {
+    "en": {
+      "type": "FOOD",
+      "name": "Food & Nutrition",
+      "description": "Log meals, track calories, and manage nutrition",
+      "icon": "restaurant-outline"
+    },
+    "ru": {
+      "type": "FOOD",
+      "name": "Еда и питание",
+      "description": "Записывайте приемы пищи, отслеживайте калории и управляйте питанием",
+      "icon": "restaurant-outline"
+    } 
+  }
+]
