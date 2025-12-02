@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { PrismaClient, ModuleType } from '../../generated/prisma';
-import modules from '../../fixtures/modules.json';
-import languages from '../../fixtures/languages.json';
+const modules = require('../../fixtures/modules.json');
+const languages = require('../../fixtures/languages.json');
 
 const prisma = new PrismaClient();
 
@@ -75,9 +76,27 @@ async function seedTranslations() {
           //     description: moduleForLang.description,
           //   },
           // });
-          // console.log(
-          //   `✅ Module translation for ${moduleForLang.name} in ${langData.code} created/updated`,
-          // );
+          // await prisma.translation.upsert({
+          //   where: {
+          //     languageCode_moduleId: {
+          //       languageCode: langData.code,
+          //       moduleId: moduleRecord.id,
+          //     },
+          //   },
+          //   update: {
+          //     name: moduleForLang.name,
+          //     description: moduleForLang.description,
+          //   },
+          //   create: {
+          //     languageCode: langData.code,
+          //     moduleId: moduleRecord.id,
+          //     name: moduleForLang.name,
+          //     description: moduleForLang.description,
+          //   },
+          // });
+          console.log(
+            `✅ Module translation for ${moduleForLang.name} in ${langData.code} created/updated`,
+          );
         }
       }
     }

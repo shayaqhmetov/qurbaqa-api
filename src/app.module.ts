@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { FinanceModule } from './finance/finance.module';
 import { AuthModule } from './auth/auth.module';
 import { ModuleManagementModule } from './modules/module.module';
+import { TranslationModule } from './translation/translation.module';
 import { ConfigModule } from '@nestjs/config';
 import keycloakConfiguration from './configurations/keycloak.configuration';
 import { ModuleAccessGuard } from './modules/guards/module-access.guard';
@@ -20,6 +21,7 @@ import { KeycloakGuard } from './keycloak/keycloak.guard';
       load: [keycloakConfiguration],
       isGlobal: true,
     }),
+    TranslationModule,
   ],
   controllers: [AppController],
   providers: [
