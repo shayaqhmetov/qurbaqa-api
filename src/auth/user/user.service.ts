@@ -3,7 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common/exceptions';
 import { PrismaClientService } from '@/clients/prisma.client';
 
-import { CreateUserDto } from './dtos/create-user.dto';
+import { AttachKeycloakUserToDatabaseDto, CreateUserDto } from './dtos/create-user.dto';
 import { KeycloakAdminService } from '@/keycloak/keycloak.service';
 
 @Injectable()
@@ -33,6 +33,27 @@ export class UserService {
     });
     this.logger.log('User deleted in database:', createUserDto.email);
     return { message: 'User successfully removed' };
+  }
+
+  async attachKeycloakUserToDatabase(attachKeycloakUserToDatabaseDto: AttachKeycloakUserToDatabaseDto) {
+    this.logger.log('Attaching Keycloak user to database - Not implemented yet');
+    const user = await this.prismaService.$transaction(async (tx) => {
+      try {
+        this.logger.log('User created in Keycloak:', attachKeycloakUserToDatabaseDto.email);
+        return await tx.user.create({
+          data: {
+            email: attachKeycloakUserToDatabaseDto.email,
+            keycloakId: attachKeycloakUserToDatabaseDto.keycloakId,
+            firstName: attachKeycloakUserToDatabaseDto.firstName,
+            lastName: attachKeycloakUserToDatabaseDto.lastName,
+            username: attachKeycloakUserToDatabaseDto.username,
+          },
+        });
+      } catch (error) {
+        throw error;
+      }
+    });
+    return user;
   }
 
   async createUser(createUserDto: CreateUserDto) {
@@ -105,10 +126,6 @@ export class UserService {
     const user = await this.prismaService.user.findFirst({
       where: { keycloakId },
     });
-    if (!user) {
-      this.logger.warn('User not found with Keycloak ID:', keycloakId);
-      throw new NotFoundException('User not found');
-    }
     this.logger.log('Fetched user by Keycloak ID:', user);
     return user;
   }

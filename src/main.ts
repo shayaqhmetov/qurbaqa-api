@@ -6,6 +6,8 @@ import { networkInterfaces } from 'os';
 import { AppModule } from './app.module';
 import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './response.interceptor';
+import { LocaleMiddleware } from './translation/locale.middleware';
+import { LocalizationInterceptor } from './translation/localization.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -35,6 +37,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.use(new LocaleMiddleware().use);
+  // register global interceptor from module
+  const localizationInterceptor = app.get(LocalizationInterceptor);
+  app.useGlobalInterceptors(localizationInterceptor);
 
   const port = config.get<number>('PORT', 3000);
   const host = config.get<string>('HOST', '0.0.0.0');

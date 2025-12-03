@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
 } from '@nestjs/common';
 
@@ -17,10 +18,11 @@ import { Public } from '@/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(
     private readonly userService: UserService,
     private readonly keycloakService: KeycloakAdminService,
-  ) {}
+  ) { }
 
   @Get('profile')
   // @Public()
@@ -51,6 +53,21 @@ export class AuthController {
       identifier: body.username,
       password: body.password,
     });
+    const userInfo = await this.keycloakService.extractUserInfoFromToken(
+      result.access_token,
+    );
+    const user = await this.userService.getUserByKeycloakId(userInfo.sub);
+    if (!user) {
+      this.logger.log('User not found in database, creating new user');
+      await this.userService.attachKeycloakUserToDatabase({
+        username: body.username,
+        password: body.password,
+        email: body.username,
+        firstName: userInfo.given_name ?? '',
+        lastName: userInfo.family_name ?? '',
+        keycloakId: userInfo.sub,
+      });
+    }
 
     return result;
   }

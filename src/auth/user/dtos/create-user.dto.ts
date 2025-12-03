@@ -25,3 +25,7 @@ export class CreateUserDto {
   @MinLength(3)
   username: string;
 }
+
+export type AttachKeycloakUserToDatabaseDto = CreateUserDto & {
+  keycloakId: string;
+};

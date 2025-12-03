@@ -12,6 +12,7 @@ import keycloakConfiguration from './configurations/keycloak.configuration';
 import { ModuleAccessGuard } from './modules/guards/module-access.guard';
 import { KeycloakGuard } from './keycloak/keycloak.guard';
 
+
 @Module({
   imports: [
     FinanceModule,
@@ -36,4 +37,4 @@ import { KeycloakGuard } from './keycloak/keycloak.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

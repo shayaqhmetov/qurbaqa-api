@@ -74,6 +74,10 @@ enum TransferStatus {
   CANCELLED
 }
 
+enum TranslationEntityType {
+  MODULE
+}
+
 model Account {
   id         String   @id @default(cuid())
   user       User     @relation(fields: [userId], references: [id])
@@ -83,7 +87,7 @@ model Account {
   currencyId String
 
   type                 AccountType            @default(CHECKING)
-  balance              Decimal?               @db.Decimal(15,2)
+  balance              Decimal?               @db.Decimal(15, 2)
   accountNumber        String?                @db.VarChar(50)
   institutionId        String?                @db.VarChar(50)
   lastSyncAt           DateTime?
@@ -103,7 +107,7 @@ model CurrencyRate {
   id         String    @id @default(cuid())
   base       String    @db.VarChar(3)
   quote      String    @db.VarChar(3)
-  rate       Decimal   @db.Decimal(15,6)
+  rate       Decimal   @db.Decimal(15, 6)
   fetchedAt  DateTime  @default(now())
   currencyId String?
   currency   Currency? @relation(fields: [currencyId], references: [id])
@@ -126,7 +130,7 @@ model Transaction {
   id          String                @id @default(cuid())
   accountId   String
   account     Account               @relation("accountTransactions", fields: [accountId], references: [id])
-  amount      Decimal               @db.Decimal(15,2)
+  amount      Decimal               @db.Decimal(15, 2)
   category    Category              @relation(fields: [categoryId], references: [id])
   categoryId  String
   currencyId  String?
@@ -155,10 +159,10 @@ model Transaction {
 }
 
 model Tag {
-  id   String           @id @default(cuid())
-  name String           @unique @db.VarChar(50)
-  color String?         @db.VarChar(7)
-  txs  TransactionTag[]
+  id    String           @id @default(cuid())
+  name  String           @unique @db.VarChar(50)
+  color String?          @db.VarChar(7)
+  txs   TransactionTag[]
 }
 
 model TransactionCategory {
@@ -167,7 +171,7 @@ model TransactionCategory {
   transactionId String
   category      Category    @relation(fields: [categoryId], references: [id])
   categoryId    String
-  amount        Decimal     @db.Decimal(15,2)
+  amount        Decimal     @db.Decimal(15, 2)
 
   @@unique([transactionId, categoryId])
 }
@@ -183,23 +187,23 @@ model TransactionTag {
 }
 
 model Transfer {
-  id            String        @id @default(cuid())
-  user          User          @relation(fields: [userId], references: [id])
+  id            String         @id @default(cuid())
+  user          User           @relation(fields: [userId], references: [id])
   userId        String
-  fromAccount   Account       @relation("outgoingTransfers", fields: [fromAccountId], references: [id])
+  fromAccount   Account        @relation("outgoingTransfers", fields: [fromAccountId], references: [id])
   fromAccountId String
-  toAccount     Account       @relation("incomingTransfers", fields: [toAccountId], references: [id])
+  toAccount     Account        @relation("incomingTransfers", fields: [toAccountId], references: [id])
   toAccountId   String
-  amount        Decimal       @db.Decimal(15,2)
-  exchangeRate  Decimal?      @db.Decimal(10,6)
-  fee           Decimal?      @db.Decimal(15,2)
+  amount        Decimal        @db.Decimal(15, 2)
+  exchangeRate  Decimal?       @db.Decimal(10, 6)
+  fee           Decimal?       @db.Decimal(15, 2)
   status        TransferStatus @default(PENDING)
   currencyId    String?
   rateId        String?
-  executedAt    DateTime      @default(now())
-  description   String?       @db.VarChar(500)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  executedAt    DateTime       @default(now())
+  description   String?        @db.VarChar(500)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([userId])
   @@index([fromAccountId])
@@ -210,7 +214,7 @@ model RecurringTransaction {
   id          String        @id @default(cuid())
   account     Account       @relation(fields: [accountId], references: [id])
   accountId   String
-  amount      Decimal       @db.Decimal(15,2)
+  amount      Decimal       @db.Decimal(15, 2)
   interval    String        @db.VarChar(20)
   nextRunAt   DateTime
   endsAt      DateTime?
@@ -265,7 +269,7 @@ model Budget {
   user       User         @relation(fields: [userId], references: [id])
   userId     String
   name       String       @db.VarChar(100)
-  amount     Decimal      @db.Decimal(15,2)
+  amount     Decimal      @db.Decimal(15, 2)
   period     BudgetPeriod @default(MONTHLY)
   category   Category?    @relation(fields: [categoryId], references: [id])
   categoryId String?
@@ -285,8 +289,8 @@ model Goal {
   userId        String
   name          String    @db.VarChar(100)
   description   String?   @db.VarChar(500)
-  targetAmount  Decimal   @db.Decimal(15,2)
-  currentAmount Decimal   @db.Decimal(15,2) @default(0)
+  targetAmount  Decimal   @db.Decimal(15, 2)
+  currentAmount Decimal   @default(0) @db.Decimal(15, 2)
   targetDate    DateTime?
   category      Category? @relation(fields: [categoryId], references: [id])
   categoryId    String?
@@ -343,15 +347,17 @@ model UserModule {
 }
 
 model Translation {
-  id         BigInt   @id @default(autoincrement())
-  entityType String   @db.Text
-  entityId   BigInt
-  field      String   @db.Text
-  locale     String   @db.Text
-  value      String   @db.Text
-  updatedAt  DateTime @default(now())
-  source     String   @default("manual") @db.Text
+  id          String                @id @default(cuid())
+  entityType  TranslationEntityType @default(MODULE)
+  entityId    String                @db.Text
+  field       String                @db.Text
+  locale      String                @db.VarChar(10)
+  value       String                @db.Text
+  source      String                @default("manual") @db.Text
+  isProofread Boolean               @default(false)
+  updatedAt   DateTime              @updatedAt
 
+  @@unique([entityType, entityId, field, locale], name: "uq_trans_entity_field_locale")
   @@index([entityType, entityId], name: "idx_trans_entity")
   @@index([entityType, entityId, field, locale], name: "idx_trans_entity_field_locale")
 }

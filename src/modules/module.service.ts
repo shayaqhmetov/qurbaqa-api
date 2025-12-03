@@ -1,13 +1,17 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaClientService } from '@/clients/prisma.client';
-import { ModuleType, ModuleStatus } from 'generated/prisma';
+import { ModuleType, ModuleStatus, TranslationEntityType } from 'generated/prisma';
 import { MODULES_MESSAGES } from '@/messages/error.messages';
+import { TranslationService } from '@/translation/translation.service';
 
 @Injectable()
 export class ModuleService {
   private readonly logger = new Logger(ModuleService.name);
 
-  constructor(private readonly prisma: PrismaClientService) {}
+  constructor(
+    private readonly prisma: PrismaClientService,
+    private readonly translationService: TranslationService,
+  ) { }
 
   // Get all available modules
   async getAllModules() {
@@ -22,7 +26,7 @@ export class ModuleService {
   }
 
   // Get user's active modules
-  async getUserModules(keycloakUserId: string) {
+  async getUserModules(keycloakUserId: string, locale: string) {
     const user = await this.prisma.user.findUnique({
       where: { keycloakId: keycloakUserId },
     });
@@ -31,7 +35,7 @@ export class ModuleService {
         MODULES_MESSAGES.USER_NOT_FOUND(keycloakUserId),
       );
     }
-    return this.prisma.userModule.findMany({
+    const modules = await this.prisma.userModule.findMany({
       where: {
         userId: user.id,
         status: ModuleStatus.ACTIVE,
@@ -41,6 +45,20 @@ export class ModuleService {
       },
       orderBy: { attachedAt: 'desc' },
     });
+    const ids = modules.map((m) => String(m.moduleId));
+    const translations = await this.translationService.batchFetchTranslations({
+      entityType: TranslationEntityType.MODULE,
+      entityIds: ids,
+      fields: ['name', 'description'],
+      locales: [locale, 'en'],
+    });
+    const localized = this.translationService.applyTranslationsToEntities(
+      modules,
+      translations,
+      ['name', 'description'],
+      [locale, 'en'],
+    );
+    return localized;
   }
 
   // Attach a module to user

@@ -8,6 +8,8 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { ModuleService } from './module.service';
 import { CurrentUserId } from '@/decorators/current-user.decorator';
@@ -17,7 +19,7 @@ import { AttachModuleDto } from './dtos/module.dto';
 export class ModuleController {
   private readonly logger = new Logger(ModuleController.name);
 
-  constructor(private readonly moduleService: ModuleService) {}
+  constructor(private readonly moduleService: ModuleService) { }
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -28,9 +30,16 @@ export class ModuleController {
 
   @Get('my-modules')
   @HttpCode(HttpStatus.OK)
-  async getMyModules(@CurrentUserId() userId: string) {
+  async getMyModules(
+    @Req() req,
+    @CurrentUserId() userId: string,
+    @Query('lang') lang?: string,
+  ) {
+    // prefer query param if present, otherwise middleware-provided req.locale
+    const locale = (lang ? String(lang).split('-')[0] : req.locale) || 'en';
+
     this.logger.log(`Fetching modules for user: ${userId}`);
-    return this.moduleService.getUserModules(userId);
+    return this.moduleService.getUserModules(userId, locale);
   }
 
   @Post('attach')

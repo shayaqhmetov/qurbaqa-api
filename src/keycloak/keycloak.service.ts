@@ -16,6 +16,19 @@ export class KeycloakCredentialDTO {
   password: string;
 }
 
+export type UserInfo = {
+  email: string;
+  family_name: string;
+  given_name: string;
+  preferred_username: string;
+  sub: string;
+};
+
+export type TokenResponse = {
+  access_token: string;
+  refresh_token: string;
+};
+
 @Injectable()
 export class KeycloakAdminService {
   private token: string;
@@ -159,9 +172,7 @@ export class KeycloakAdminService {
     }
   }
 
-  async login(
-    credentials: KeycloakCredentialDTO,
-  ): Promise<{ access_token: string; refresh_token: string }> {
+  async login(credentials: KeycloakCredentialDTO): Promise<TokenResponse> {
     const response = await this.requestService.post(
       `${this.configService.get('authenticationServerUrl')}/realms/${this.configService.get('realmName')}/protocol/openid-connect/token`,
       new URLSearchParams({
@@ -178,6 +189,7 @@ export class KeycloakAdminService {
       },
     );
     const responseData = JSON.parse(response.data);
+
     if (responseData.error) {
       this.logger.error(
         'Keycloak login error:',
@@ -263,6 +275,21 @@ export class KeycloakAdminService {
       }
       this.logger.error('Error refreshing token:', error.message);
       throw new UnauthorizedException('Refresh token expired or invalid');
+    }
+  }
+
+  extractUserInfoFromToken(token: string): UserInfo {
+    try {
+      const user: UserInfo = JSON.parse(
+        Buffer.from(token.split('.')[1], 'base64').toString(),
+      );
+      return user;
+    } catch (error) {
+      this.logger.error(
+        'Error extracting user info from token:',
+        error.message,
+      );
+      throw new UnauthorizedException('Invalid token');
     }
   }
 
