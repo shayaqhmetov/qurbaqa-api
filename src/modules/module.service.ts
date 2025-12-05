@@ -1,8 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaClientService } from '@/clients/prisma.client';
-import { ModuleType, ModuleStatus, TranslationEntityType } from 'generated/prisma';
+import { ModuleType, ModuleStatus } from 'generated/prisma';
 import { MODULES_MESSAGES } from '@/messages/error.messages';
 import { TranslationService } from '@/translation/translation.service';
+import { TranslationEntityType } from '@/translation/dtos/create-translation.dto';
 
 @Injectable()
 export class ModuleService {
@@ -47,7 +48,7 @@ export class ModuleService {
     });
     const ids = modules.map((m) => String(m.moduleId));
     const translations = await this.translationService.batchFetchTranslations({
-      entityType: TranslationEntityType.MODULE,
+      entityType: TranslationEntityType.Module,
       entityIds: ids,
       fields: ['name', 'description'],
       locales: [locale, 'en'],

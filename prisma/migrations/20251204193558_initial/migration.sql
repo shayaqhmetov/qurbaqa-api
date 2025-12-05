@@ -1,20 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to alter the column `name` on the `Account` table. The data in that column could be lost. The data in that column will be cast from `Text` to `VarChar(100)`.
-  - You are about to alter the column `name` on the `Category` table. The data in that column could be lost. The data in that column will be cast from `Text` to `VarChar(100)`.
-  - You are about to alter the column `description` on the `Category` table. The data in that column could be lost. The data in that column will be cast from `Text` to `VarChar(500)`.
-  - You are about to alter the column `amount` on the `Transaction` table. The data in that column could be lost. The data in that column will be cast from `DoublePrecision` to `Decimal(15,2)`.
-  - You are about to alter the column `description` on the `Transaction` table. The data in that column could be lost. The data in that column will be cast from `Text` to `VarChar(500)`.
-  - You are about to alter the column `email` on the `User` table. The data in that column could be lost. The data in that column will be cast from `Text` to `VarChar(255)`.
-  - A unique constraint covering the columns `[slug]` on the table `Category` will be added. If there are existing duplicate values, this will fail.
-  - Added the required column `updatedAt` to the `Account` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `slug` to the `Category` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `updatedAt` to the `Category` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `updatedAt` to the `Transaction` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `updatedAt` to the `User` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
 CREATE TYPE "AccountType" AS ENUM ('CHECKING', 'SAVINGS', 'CREDIT', 'CASH', 'INVESTMENT', 'OTHER');
 
@@ -30,52 +13,47 @@ CREATE TYPE "BudgetPeriod" AS ENUM ('WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY');
 -- CreateEnum
 CREATE TYPE "TransferStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED');
 
--- AlterTable
-ALTER TABLE "Account" ADD COLUMN     "accountNumber" VARCHAR(50),
-ADD COLUMN     "balance" DECIMAL(15,2),
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "institutionId" VARCHAR(50),
-ADD COLUMN     "isArchived" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "lastSyncAt" TIMESTAMP(3),
-ADD COLUMN     "type" "AccountType" NOT NULL DEFAULT 'CHECKING',
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ALTER COLUMN "name" SET DATA TYPE VARCHAR(100);
+-- CreateEnum
+CREATE TYPE "ModuleType" AS ENUM ('FINANCE', 'FOOD');
 
--- AlterTable
-ALTER TABLE "Category" ADD COLUMN     "color" VARCHAR(7),
-ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "icon" VARCHAR(50),
-ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "parentId" TEXT,
-ADD COLUMN     "slug" VARCHAR(100) NOT NULL,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ALTER COLUMN "name" SET DATA TYPE VARCHAR(100),
-ALTER COLUMN "description" SET DATA TYPE VARCHAR(500);
+-- CreateEnum
+CREATE TYPE "ModuleStatus" AS ENUM ('ACTIVE', 'INACTIVE');
 
--- AlterTable
-ALTER TABLE "Transaction" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "currencyId" TEXT,
-ADD COLUMN     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "note" VARCHAR(1000),
-ADD COLUMN     "recurringId" TEXT,
-ADD COLUMN     "splitted" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "status" "TransactionStatus" NOT NULL DEFAULT 'CLEARED',
-ADD COLUMN     "type" "TransactionType" NOT NULL DEFAULT 'EXPENSE',
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "userId" TEXT,
-ALTER COLUMN "amount" SET DATA TYPE DECIMAL(15,2),
-ALTER COLUMN "description" SET DATA TYPE VARCHAR(500);
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "keycloakId" VARCHAR(36) NOT NULL DEFAULT 'no keycloakId',
+    "email" VARCHAR(255) NOT NULL,
+    "username" VARCHAR(100) DEFAULT 'no username',
+    "firstName" VARCHAR(100),
+    "lastName" VARCHAR(100),
+    "timezone" VARCHAR(50) NOT NULL DEFAULT 'UTC',
+    "locale" VARCHAR(10) NOT NULL DEFAULT 'en',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "lastLoginAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "firstName" VARCHAR(100),
-ADD COLUMN     "isActive" BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN     "lastLoginAt" TIMESTAMP(3),
-ADD COLUMN     "lastName" VARCHAR(100),
-ADD COLUMN     "locale" VARCHAR(10) NOT NULL DEFAULT 'en',
-ADD COLUMN     "timezone" VARCHAR(50) NOT NULL DEFAULT 'UTC',
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ALTER COLUMN "email" SET DATA TYPE VARCHAR(255);
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Account" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "currencyId" TEXT NOT NULL,
+    "type" "AccountType" NOT NULL DEFAULT 'CHECKING',
+    "balance" DECIMAL(15,2),
+    "accountNumber" VARCHAR(50),
+    "institutionId" VARCHAR(50),
+    "lastSyncAt" TIMESTAMP(3),
+    "isArchived" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "CurrencyRate" (
@@ -87,6 +65,38 @@ CREATE TABLE "CurrencyRate" (
     "currencyId" TEXT,
 
     CONSTRAINT "CurrencyRate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Currency" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "symbol" TEXT NOT NULL,
+
+    CONSTRAINT "Currency_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Transaction" (
+    "id" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "amount" DECIMAL(15,2) NOT NULL,
+    "categoryId" TEXT NOT NULL,
+    "currencyId" TEXT,
+    "type" "TransactionType" NOT NULL DEFAULT 'EXPENSE',
+    "status" "TransactionStatus" NOT NULL DEFAULT 'CLEARED',
+    "description" VARCHAR(500),
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "splitted" BOOLEAN NOT NULL DEFAULT false,
+    "recurringId" TEXT,
+    "note" VARCHAR(1000),
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "userId" TEXT,
+
+    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -168,6 +178,22 @@ CREATE TABLE "Attachment" (
 );
 
 -- CreateTable
+CREATE TABLE "Category" (
+    "id" TEXT NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "description" VARCHAR(500),
+    "slug" VARCHAR(100) NOT NULL,
+    "color" VARCHAR(7),
+    "icon" VARCHAR(50),
+    "parentId" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Budget" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -202,11 +228,94 @@ CREATE TABLE "Goal" (
     CONSTRAINT "Goal_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "modules" (
+    "id" TEXT NOT NULL,
+    "type" "ModuleType" NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "description" TEXT,
+    "icon" VARCHAR(50),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "modules_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "user_modules" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "moduleId" TEXT NOT NULL,
+    "status" "ModuleStatus" NOT NULL DEFAULT 'ACTIVE',
+    "attachedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "detachedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "user_modules_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Translation" (
+    "id" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "field" TEXT NOT NULL,
+    "locale" VARCHAR(10) NOT NULL,
+    "value" TEXT NOT NULL,
+    "source" TEXT NOT NULL DEFAULT 'manual',
+    "isProofread" BOOLEAN NOT NULL DEFAULT false,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Translation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Language" (
+    "id" TEXT NOT NULL,
+    "code" VARCHAR(10) NOT NULL,
+    "name" VARCHAR(100) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Language_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_keycloakId_key" ON "User"("keycloakId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE INDEX "Account_userId_idx" ON "Account"("userId");
+
+-- CreateIndex
+CREATE INDEX "Account_userId_isArchived_idx" ON "Account"("userId", "isArchived");
+
 -- CreateIndex
 CREATE INDEX "CurrencyRate_base_quote_fetchedAt_idx" ON "CurrencyRate"("base", "quote", "fetchedAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CurrencyRate_base_quote_key" ON "CurrencyRate"("base", "quote");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Currency_code_key" ON "Currency"("code");
+
+-- CreateIndex
+CREATE INDEX "Transaction_accountId_date_idx" ON "Transaction"("accountId", "date");
+
+-- CreateIndex
+CREATE INDEX "Transaction_userId_date_idx" ON "Transaction"("userId", "date");
+
+-- CreateIndex
+CREATE INDEX "Transaction_categoryId_idx" ON "Transaction"("categoryId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_type_status_idx" ON "Transaction"("type", "status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Tag_name_key" ON "Tag"("name");
@@ -236,6 +345,18 @@ CREATE INDEX "RecurringTransaction_active_nextRunAt_idx" ON "RecurringTransactio
 CREATE INDEX "Attachment_transactionId_idx" ON "Attachment"("transactionId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+
+-- CreateIndex
+CREATE INDEX "Category_parentId_idx" ON "Category"("parentId");
+
+-- CreateIndex
+CREATE INDEX "Category_isActive_idx" ON "Category"("isActive");
+
+-- CreateIndex
 CREATE INDEX "Budget_userId_period_idx" ON "Budget"("userId", "period");
 
 -- CreateIndex
@@ -248,34 +369,40 @@ CREATE INDEX "Goal_userId_idx" ON "Goal"("userId");
 CREATE INDEX "Goal_isActive_isCompleted_idx" ON "Goal"("isActive", "isCompleted");
 
 -- CreateIndex
-CREATE INDEX "Account_userId_idx" ON "Account"("userId");
+CREATE UNIQUE INDEX "modules_type_key" ON "modules"("type");
 
 -- CreateIndex
-CREATE INDEX "Account_userId_isArchived_idx" ON "Account"("userId", "isArchived");
+CREATE INDEX "user_modules_userId_status_idx" ON "user_modules"("userId", "status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+CREATE UNIQUE INDEX "user_modules_userId_moduleId_key" ON "user_modules"("userId", "moduleId");
 
 -- CreateIndex
-CREATE INDEX "Category_parentId_idx" ON "Category"("parentId");
+CREATE INDEX "idx_trans_entity" ON "Translation"("entityType", "entityId");
 
 -- CreateIndex
-CREATE INDEX "Category_isActive_idx" ON "Category"("isActive");
+CREATE INDEX "idx_trans_entity_field_locale" ON "Translation"("entityType", "entityId", "field", "locale");
 
 -- CreateIndex
-CREATE INDEX "Transaction_accountId_date_idx" ON "Transaction"("accountId", "date");
+CREATE UNIQUE INDEX "Translation_entityType_entityId_field_locale_key" ON "Translation"("entityType", "entityId", "field", "locale");
 
 -- CreateIndex
-CREATE INDEX "Transaction_userId_date_idx" ON "Transaction"("userId", "date");
+CREATE UNIQUE INDEX "Language_code_key" ON "Language"("code");
 
--- CreateIndex
-CREATE INDEX "Transaction_categoryId_idx" ON "Transaction"("categoryId");
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- CreateIndex
-CREATE INDEX "Transaction_type_status_idx" ON "Transaction"("type", "status");
+-- AddForeignKey
+ALTER TABLE "Account" ADD CONSTRAINT "Account_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CurrencyRate" ADD CONSTRAINT "CurrencyRate_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "Currency"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -327,3 +454,9 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_modules" ADD CONSTRAINT "user_modules_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "user_modules" ADD CONSTRAINT "user_modules_moduleId_fkey" FOREIGN KEY ("moduleId") REFERENCES "modules"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

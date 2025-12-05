@@ -1,9 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-import { TranslationEntityType } from 'generated/prisma';
+import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+
+export enum TranslationEntityType {
+  Module = 'Module',
+}
 
 export class UpsertTranslationDto {
   @IsString()
   @IsNotEmpty()
+  @IsEnum(TranslationEntityType)
   entityType: TranslationEntityType;
   @IsString()
   @IsNotEmpty()

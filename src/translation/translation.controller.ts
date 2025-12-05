@@ -15,4 +15,14 @@ export default class TranslationController {
   async addTranslation(@Body() dto: UpsertTranslationDto) {
     return this.translationService.upsertTranslation(dto);
   }
+
+  @Get()
+  async getTranslations() {
+    return this.translationService.getAllTranslations();
+  }
+
+  @Get('entities')
+  async getTranslatableEntities() {
+    return this.translationService.getTranslatableEntities();
+  }
 }
