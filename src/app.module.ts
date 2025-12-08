@@ -11,7 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import keycloakConfiguration from './configurations/keycloak.configuration';
 import { ModuleAccessGuard } from './modules/guards/module-access.guard';
 import { KeycloakGuard } from './keycloak/keycloak.guard';
-
+import configuration from './configurations/configuration';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { KeycloakGuard } from './keycloak/keycloak.guard';
     AuthModule,
     ModuleManagementModule,
     ConfigModule.forRoot({
-      load: [keycloakConfiguration],
+      load: [keycloakConfiguration, configuration],
       isGlobal: true,
     }),
     TranslationModule,

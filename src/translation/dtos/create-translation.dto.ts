@@ -1,29 +1,37 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum TranslationEntityType {
   Module = 'Module',
 }
 
 export class UpsertTranslationDto {
-  @IsString()
-  @IsNotEmpty()
+  @ApiProperty({ enum: TranslationEntityType })
   @IsEnum(TranslationEntityType)
-  entityType: TranslationEntityType;
-  @IsString()
   @IsNotEmpty()
-  entityId: string | number;
-  @IsString()
+  entityType: TranslationEntityType;
+
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  entityId: string;
+
+  @ApiProperty({ type: String })
   @IsNotEmpty()
   field: string;
-  @IsString()
+
+  @ApiProperty({ type: String })
   @IsNotEmpty()
   locale: string;
-  @IsString()
+
+  @ApiProperty({ type: String })
   @IsNotEmpty()
   value: string;
-  @IsString()
+
+  @ApiProperty({ type: String, required: false })
   @IsOptional()
   source?: string;
+
+  @ApiProperty({ type: Boolean, required: false })
   @IsOptional()
   isProofread?: boolean;
 }

@@ -10,9 +10,12 @@ import { ConfigService } from '@nestjs/config';
 
 import * as ErrorMessages from '../messages/error.messages';
 import { KeycloakSignUpDTO } from './dtos/keycloak.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class KeycloakCredentialDTO {
+  @ApiProperty({ type: String })
   identifier: string;
+  @ApiProperty({ type: String })
   password: string;
 }
 

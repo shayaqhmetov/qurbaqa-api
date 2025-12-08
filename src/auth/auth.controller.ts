@@ -1,12 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 import { LoginDto } from '@/auth/dtos/auth.dto';
 import { LogoutDto } from '@/auth/dtos/logout.dto';
@@ -16,6 +9,7 @@ import { CreateUserDto } from './user/dtos/create-user.dto';
 import { KeycloakAdminService } from '@/keycloak/keycloak.service';
 import { Public } from '@/decorators/public.decorator';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -25,6 +19,7 @@ export class AuthController {
   ) { }
 
   @Get('profile')
+  @ApiOperation({ summary: 'Get user profile' })
   // @Public()
   // @Roles({roles:['admin']})
   async getUsers() {
@@ -32,6 +27,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @ApiOperation({ summary: 'Register new user' })
   @Public()
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() createUserDto: CreateUserDto) {

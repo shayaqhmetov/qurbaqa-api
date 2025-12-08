@@ -13,8 +13,10 @@ import {
 } from '@nestjs/common';
 import { ModuleService } from './module.service';
 import { CurrentUserId } from '@/decorators/current-user.decorator';
-import { AttachModuleDto } from './dtos/module.dto';
+import { AttachModuleDto, CreateModuleDto } from './dtos/module.dto';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('modules')
 @Controller('modules')
 export class ModuleController {
   private readonly logger = new Logger(ModuleController.name);
@@ -23,6 +25,7 @@ export class ModuleController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get all available modules' })
   async getAllModules() {
     this.logger.log('Fetching all available modules');
     return this.moduleService.getAllModules();
@@ -30,6 +33,7 @@ export class ModuleController {
 
   @Get('my-modules')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get modules attached to current user' })
   async getMyModules(
     @Req() req,
     @CurrentUserId() userId: string,
@@ -60,5 +64,13 @@ export class ModuleController {
   ) {
     this.logger.log(`Detaching module ${moduleId} from user ${userId}`);
     return this.moduleService.detachModule(userId, moduleId as any);
+  }
+
+  @Post('')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: CreateModuleDto })
+  async createModule(@Body() body: CreateModuleDto) {
+    this.logger.log(`Creating new module with data: ${JSON.stringify(body)}`);
+    return this.moduleService.createModule(body);
   }
 }

@@ -8,6 +8,7 @@ import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './response.interceptor';
 import { LocaleMiddleware } from './translation/locale.middleware';
 import { LocalizationInterceptor } from './translation/localization.interceptor';
+import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -42,6 +43,21 @@ async function bootstrap() {
   const localizationInterceptor = app.get(LocalizationInterceptor);
   app.useGlobalInterceptors(localizationInterceptor);
 
+  const docConfig = new DocumentBuilder()
+    .setTitle(config.get<string>('SWAGGER_TITLE') ?? 'API Documentation')
+    .setDescription(
+      config.get<string>('SWAGGER_DESCRIPTION') ?? 'API Documentation',
+    )
+    .setVersion(config.get<string>('SWAGGER_VERSION') ?? '1.0')
+    .addTag('api')
+    .build();
+  const swaggerOptions: SwaggerCustomOptions = {
+    ui: true,
+    raw: ['json'],
+  };
+  const documentFactory = () => SwaggerModule.createDocument(app, docConfig);
+  SwaggerModule.setup('api/docs', app, documentFactory, swaggerOptions);
+
   const port = config.get<number>('PORT', 3000);
   const host = config.get<string>('HOST', '0.0.0.0');
 
@@ -61,6 +77,9 @@ async function bootstrap() {
       }
     }
   }
+
+  logger.log('========================================');
+  logger.log(`   Swagger:          http://localhost:${port}/api/docs`);
 
   logger.log(`🚀 Server is running on:`);
   logger.log(`   Local:            http://localhost:${port}`);

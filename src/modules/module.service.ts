@@ -4,6 +4,7 @@ import { ModuleType, ModuleStatus } from 'generated/prisma';
 import { MODULES_MESSAGES } from '@/messages/error.messages';
 import { TranslationService } from '@/translation/translation.service';
 import { TranslationEntityType } from '@/translation/dtos/create-translation.dto';
+import { CreateModuleDto } from './dtos/module.dto';
 
 @Injectable()
 export class ModuleService {
@@ -13,6 +14,14 @@ export class ModuleService {
     private readonly prisma: PrismaClientService,
     private readonly translationService: TranslationService,
   ) { }
+
+  async createModule(data: CreateModuleDto) {
+    const newModule = await this.prisma.module.create({
+      data,
+    });
+    this.logger.log(`✅ Created new module with ID: ${newModule.id}`);
+    return newModule;
+  }
 
   // Get all available modules
   async getAllModules() {
