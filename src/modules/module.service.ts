@@ -16,6 +16,17 @@ export class ModuleService {
   ) { }
 
   async createModule(data: CreateModuleDto) {
+    const exists = await this.prisma.module.findUnique({
+      where: { type: data.type },
+    });
+    if (exists) {
+      this.logger.warn(
+        `Module creation attempted with existing type: ${data.type}`,
+      );
+      throw new NotFoundException(
+        MODULES_MESSAGES.MODULE_TYPE_EXISTS(data.type),
+      );
+    }
     const newModule = await this.prisma.module.create({
       data,
     });

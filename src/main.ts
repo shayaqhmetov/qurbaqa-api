@@ -8,7 +8,11 @@ import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './response.interceptor';
 import { LocaleMiddleware } from './translation/locale.middleware';
 import { LocalizationInterceptor } from './translation/localization.interceptor';
-import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
+import {
+  DocumentBuilder,
+  SwaggerCustomOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

@@ -11,4 +11,6 @@ export const MODULES_MESSAGES = {
   MODULE_NOT_FOUND: (moduleId: string) => `Module ${moduleId} not found`,
   MODULE_NOT_ATTACHED: (moduleId: string) => `Module ${moduleId} not attached`,
   USER_NOT_FOUND: (userId: string) => `User with id ${userId} not found`,
+  MODULE_TYPE_EXISTS: (moduleType: string) =>
+    `Module of type ${moduleType} already exists`,
 };
