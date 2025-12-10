@@ -3,13 +3,13 @@ import { APP_GUARD } from '@nestjs/core';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { FinanceModule } from './finance/finance.module';
-import { AuthModule } from './auth/auth.module';
-import { ModuleManagementModule } from './modules/module.module';
-import { TranslationModule } from './translation/translation.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ModuleManagementModule } from './modules/modules/module.module';
+import { TranslationModule } from './modules/translation/translation.module';
 import { ConfigModule } from '@nestjs/config';
 import keycloakConfiguration from './configurations/keycloak.configuration';
-import { ModuleAccessGuard } from './modules/guards/module-access.guard';
+import { ModuleAccessGuard } from './modules/modules/module-access.guard';
 import { KeycloakGuard } from './keycloak/keycloak.guard';
 import configuration from './configurations/configuration';
 
@@ -37,4 +37,4 @@ import configuration from './configurations/configuration';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

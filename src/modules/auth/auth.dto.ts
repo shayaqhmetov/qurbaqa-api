@@ -13,3 +13,17 @@ export class LoginDto {
   @MinLength(6)
   password: string;
 }
+
+export class LogoutDto {
+  @ApiProperty({ type: String })
+  @IsString()
+  @IsNotEmpty()
+  refresh_token: string;
+}
+
+export class RefreshDto {
+  @ApiProperty({ type: String })
+  @IsString()
+  @IsNotEmpty()
+  refresh_token: string;
+}

@@ -1,10 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaClientService } from '@/clients/prisma.client';
-import { ModuleType, ModuleStatus } from 'generated/prisma';
 import { MODULES_MESSAGES } from '@/messages/error.messages';
-import { TranslationService } from '@/translation/translation.service';
-import { TranslationEntityType } from '@/translation/dtos/create-translation.dto';
-import { CreateModuleDto } from './dtos/module.dto';
+import { TranslationService } from '@/modules/translation/translation.service';
+import { TranslationEntityType } from '@/modules/translation/translation.dto';
+import { CreateModuleDto } from './module.dto';
+
+import { ModuleType, ModuleStatus, Module, UserModule } from 'generated/prisma';
 
 @Injectable()
 export class ModuleService {
@@ -13,9 +14,9 @@ export class ModuleService {
   constructor(
     private readonly prisma: PrismaClientService,
     private readonly translationService: TranslationService,
-  ) { }
+  ) {}
 
-  async createModule(data: CreateModuleDto) {
+  async createModule(data: CreateModuleDto): Promise<Module> {
     const exists = await this.prisma.module.findUnique({
       where: { type: data.type },
     });
@@ -35,7 +36,7 @@ export class ModuleService {
   }
 
   // Get all available modules
-  async getAllModules() {
+  async getAllModules(): Promise<Module[]> {
     return this.prisma.module.findMany({
       include: {
         _count: {
@@ -47,7 +48,10 @@ export class ModuleService {
   }
 
   // Get user's active modules
-  async getUserModules(keycloakUserId: string, locale: string) {
+  async getUserModules(
+    keycloakUserId: string,
+    locale: string,
+  ): Promise<Module[]> {
     const user = await this.prisma.user.findUnique({
       where: { keycloakId: keycloakUserId },
     });
@@ -73,17 +77,22 @@ export class ModuleService {
       fields: ['name', 'description'],
       locales: [locale, 'en'],
     });
-    const localized = this.translationService.applyTranslationsToEntities(
-      modules,
-      translations,
-      ['name', 'description'],
-      [locale, 'en'],
-    );
+    const moduleEntities = modules.map((m) => m.module);
+    const localized =
+      this.translationService.applyTranslationsToEntities<Module>(
+        moduleEntities,
+        translations,
+        ['name', 'description'],
+        [locale, 'en'],
+      );
     return localized;
   }
 
   // Attach a module to user
-  async attachModule(keycloakUserId: string, moduleId: string) {
+  async attachModule(
+    keycloakUserId: string,
+    moduleId: string,
+  ): Promise<UserModule> {
     const module = await this.prisma.module.findUnique({
       where: { id: moduleId },
     });
@@ -209,5 +218,24 @@ export class ModuleService {
     });
 
     return !!userModule;
+  }
+
+  async deleteModule(moduleId: string): Promise<Module> {
+    const module = await this.prisma.module.findUnique({
+      where: { id: moduleId },
+    });
+
+    if (!module) {
+      throw new NotFoundException(MODULES_MESSAGES.MODULE_NOT_FOUND(moduleId));
+    }
+
+    // Optionally, you might want to handle cascading deletions or checks here
+
+    const deletedModule = await this.prisma.module.delete({
+      where: { id: moduleId },
+    });
+
+    this.logger.log(`✅ Deleted module with ID: ${moduleId}`);
+    return deletedModule;
   }
 }

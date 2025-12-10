@@ -6,8 +6,8 @@ import { networkInterfaces } from 'os';
 import { AppModule } from './app.module';
 import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './response.interceptor';
-import { LocaleMiddleware } from './translation/locale.middleware';
-import { LocalizationInterceptor } from './translation/localization.interceptor';
+import { LocaleMiddleware } from './modules/translation/locale.middleware';
+import { LocalizationInterceptor } from './modules/translation/localization.interceptor';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,

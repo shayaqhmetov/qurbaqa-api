@@ -4,17 +4,14 @@ import { Logger, Inject } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { PrismaClientService } from '@/clients/prisma.client';
 import { REDIS_CLIENT } from '@/redis/redis.module';
-import {
-  TranslationEntityType,
-  UpsertTranslationDto,
-} from './dtos/create-translation.dto';
+import { TranslationEntityType, UpsertTranslationDto } from './translation.dto';
 @Injectable()
 export class TranslationService {
   private readonly logger = new Logger(TranslationService.name);
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     @Inject(PrismaClientService) private readonly prisma: PrismaClientService,
-  ) { }
+  ) {}
 
   private cacheKey(entityType: string, entityId: string, locale: string) {
     return `trans:${entityType}:${entityId}:${locale}`;
@@ -102,7 +99,7 @@ export class TranslationService {
     translationsMap: Record<string, Record<string, Record<string, string>>>,
     fields: string[],
     locales: string[],
-  ) {
+  ): T[] {
     return entities.map((ent) => {
       const key = String(ent.id);
       const langs = translationsMap[key] ?? {};

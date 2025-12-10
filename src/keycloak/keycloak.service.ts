@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import * as ErrorMessages from '../messages/error.messages';
 import { KeycloakSignUpDTO } from './dtos/keycloak.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { BaseApiResponse } from '@/dto';
 
 export class KeycloakCredentialDTO {
   @ApiProperty({ type: String })
@@ -27,10 +28,17 @@ export type UserInfo = {
   sub: string;
 };
 
-export type TokenResponse = {
+export class TokenDto {
+  @ApiProperty({ type: String })
   access_token: string;
+  @ApiProperty({ type: String })
   refresh_token: string;
-};
+}
+
+export class TokenResponseDto extends BaseApiResponse<TokenDto> {
+  @ApiProperty({ type: TokenDto })
+  data: TokenDto;
+}
 
 @Injectable()
 export class KeycloakAdminService {
@@ -175,7 +183,7 @@ export class KeycloakAdminService {
     }
   }
 
-  async login(credentials: KeycloakCredentialDTO): Promise<TokenResponse> {
+  async login(credentials: KeycloakCredentialDTO): Promise<TokenDto> {
     const response = await this.requestService.post(
       `${this.configService.get('authenticationServerUrl')}/realms/${this.configService.get('realmName')}/protocol/openid-connect/token`,
       new URLSearchParams({

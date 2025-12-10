@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common/exceptions';
 
 import { PrismaClientService } from '@/clients/prisma.client';
-import { CreateAccountDto } from './dtos/account.dto';
-import { UserService } from '@/auth/user/user.service';
+import { AccountDto, CreateAccountDto } from './dtos/account.dto';
+import { UserService } from '@/modules/auth/user/user.service';
 import * as ErrorMessages from '@/messages/error.messages';
 
 @Injectable()
@@ -19,7 +19,7 @@ export default class AccountService {
     protected readonly userService: UserService,
   ) { }
 
-  async getAccountById(accountId: string) {
+  async getAccountById(accountId: string): Promise<AccountDto> {
     const account = await this.prismaClientService.account.findUnique({
       where: { id: accountId },
     });
@@ -31,7 +31,10 @@ export default class AccountService {
     return account;
   }
 
-  async createAccount(createAccountDto: CreateAccountDto, userId: string) {
+  async createAccount(
+    createAccountDto: CreateAccountDto,
+    userId: string,
+  ): Promise<AccountDto> {
     console.log('Creating account for user ID:', userId);
     const user = await this.userService.getUserByKeycloakId(userId);
     if (!user) {
@@ -70,7 +73,7 @@ export default class AccountService {
     return account;
   }
 
-  public async getAllAccounts() {
+  public async getAllAccounts(): Promise<AccountDto[]> {
     const accounts = await this.prismaClientService.account.findMany({
       include: {
         currency: true,

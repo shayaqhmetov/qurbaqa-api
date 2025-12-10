@@ -6,7 +6,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ModuleService } from '../module.service';
+import { ModuleService } from './module.service';
 import * as MESSAGES from '@/messages/error.messages';
 
 export const REQUIRED_MODULE_KEY = 'requiredModule';

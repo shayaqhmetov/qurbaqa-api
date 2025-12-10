@@ -5,23 +5,16 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-  timestamp: string;
-  path: string;
-  statusCode: number;
-}
+import { ApiResponseType } from './types';
 
 @Injectable()
 export default class ResponseInterceptor<T>
-  implements NestInterceptor<T, ApiResponse<T>> {
+  implements NestInterceptor<T, ApiResponseType<T>>
+{
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ApiResponse<T>> {
+  ): Observable<ApiResponseType<T>> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
 

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ModuleService } from '../src/modules/module.service';
+import { ModuleService } from '../src/modules/modules/module.service';
 import { PrismaClientService } from '../src/clients/prisma.client';
 
 const mockPrisma = {

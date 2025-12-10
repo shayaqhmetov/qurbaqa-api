@@ -3,8 +3,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common/exceptions';
 import { PrismaClientService } from '@/clients/prisma.client';
 
-import { AttachKeycloakUserToDatabaseDto, CreateUserDto } from './dtos/create-user.dto';
-import { KeycloakAdminService } from '@/keycloak/keycloak.service';
+import { AttachKeycloakUserToDatabaseDto, CreateUserDto } from './user.dto';
+import { KeycloakAdminService, TokenDto } from '@/keycloak/keycloak.service';
 
 @Injectable()
 export class UserService {
@@ -56,7 +56,7 @@ export class UserService {
     return user;
   }
 
-  async createUser(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto): Promise<TokenDto> {
     this.logger.log('Creating user with email:', createUserDto.email);
     const user = await this.prismaService.user.findFirst({
       where: {
@@ -67,7 +67,7 @@ export class UserService {
       this.logger.log(
         'User not found, creating new user in Keycloak and database',
       );
-      const user = await this.prismaService.$transaction(async (tx) => {
+      await this.prismaService.$transaction(async (tx) => {
         let keycloakUserId: string | undefined;
 
         try {
@@ -102,8 +102,6 @@ export class UserService {
           throw error;
         }
       });
-
-      return user;
     }
     return await this.keycloakService.login({
       identifier: createUserDto.email,
