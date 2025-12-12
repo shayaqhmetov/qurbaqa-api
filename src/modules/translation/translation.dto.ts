@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { BaseApiResponse } from '@/dto';
 
 export enum TranslationEntityType {
   Module = 'Module',
@@ -82,4 +83,24 @@ export class TranslationDto {
   @ApiProperty({ type: Date })
   @IsNotEmpty()
   updatedAt: Date;
+}
+
+export class TranslationResponseDto extends BaseApiResponse<TranslationDto> {
+  @ApiProperty({ type: TranslationDto })
+  data: TranslationDto;
+}
+
+export class TranslationsResponseDto extends BaseApiResponse<TranslationDto[]> {
+  @ApiProperty({ type: [TranslationDto] })
+  data: TranslationDto[];
+}
+
+export class TranslatableEntitiesResponseDto extends BaseApiResponse<string[]> {
+  @ApiProperty({ type: [String] })
+  data: string[];
+}
+
+export class LanguagesResponseDto extends BaseApiResponse<LanguageDto[]> {
+  @ApiProperty({ type: [LanguageDto] })
+  data: LanguageDto[];
 }

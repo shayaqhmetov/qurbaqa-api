@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import {
   ApiTags,
+  ApiBody,
   ApiOperation,
   ApiBearerAuth,
   ApiOkResponse,
-  ApiBody,
 } from '@nestjs/swagger';
 
 import { CreateUserDto, UserResponseDto, UserDto } from './user/user.dto';
@@ -36,7 +36,7 @@ export class AuthController {
   constructor(
     private readonly userService: UserService,
     private readonly keycloakService: KeycloakAdminService,
-  ) {}
+  ) { }
 
   @Get('profile')
   @ApiOperation({ summary: 'Get user profile' })
@@ -72,7 +72,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({ type: LoginDto })
   @ApiOkResponse({ description: 'User logged in', type: TokenResponseDto })
   async login(@Body() body: LoginDto): Promise<TokenDto> {
     const result = await this.keycloakService.login({

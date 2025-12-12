@@ -17,6 +17,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
         const options: RedisOptions = {
           maxRetriesPerRequest: null, // unlimited retries
           enableReadyCheck: true,
+          password: config.get<string>('REDIS_PASSWORD'),
           retryStrategy: (times) => {
             // Increase delay to avoid flooding errors
             const delay = Math.min(times * 1000, 30000); // 1s, 2s, ..., max 30s
