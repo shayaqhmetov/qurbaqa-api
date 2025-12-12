@@ -5,6 +5,7 @@ import {
   CreateAccountDto,
   AccountResponseDto,
   AccountsResponseDto,
+  AccountTypesResponseDto,
 } from './dtos/account.dto';
 import { CurrentUser } from '@/modules/auth/user/user.decorator';
 import { RequireModule } from '@/modules/modules/module-access.guard';
@@ -16,13 +17,24 @@ import {
   ApiOkResponse,
   ApiBody,
 } from '@nestjs/swagger';
+import { $Enums } from 'generated/prisma';
+import {
+  CurrencyDto,
+  CreateCurrencyDto,
+  CurrencyResponseDto,
+  CurrenciesResponseDto,
+} from './currency/currency.dto';
+import CurrencyService from './currency/currency.service';
 
 @ApiTags('finance')
 @Controller('finance')
 @RequireModule('FINANCE')
 @ApiBearerAuth('access_token')
 export class FinanceController {
-  constructor(protected readonly accountService: AccountService) {}
+  constructor(
+    protected readonly accountService: AccountService,
+    protected readonly currencyService: CurrencyService,
+  ) {}
 
   @Get('account/:id')
   @ApiOperation({ summary: 'Get account info by ID' })
@@ -37,7 +49,7 @@ export class FinanceController {
   @ApiOperation({ summary: 'Get all accounts' })
   @ApiOkResponse({
     description: 'List of accounts',
-    type: [AccountsResponseDto],
+    type: AccountsResponseDto,
   })
   async getAccounts(): Promise<AccountDto[]> {
     const accounts = await this.accountService.getAllAccounts();
@@ -58,5 +70,37 @@ export class FinanceController {
       user.sub,
     );
     return account;
+  }
+
+  @Get('types')
+  @ApiOperation({ summary: 'Get account types' })
+  @ApiOkResponse({
+    description: 'List of account types',
+    type: AccountTypesResponseDto,
+  })
+  async getAccountTypes(): Promise<string[]> {
+    const types = Object.values($Enums.AccountType);
+    return types;
+  }
+
+  @Get('currencies')
+  @ApiOperation({ summary: 'Get all currencies' })
+  @ApiOkResponse({
+    description: 'List of currencies',
+    type: CurrenciesResponseDto,
+  })
+  async getCurrencies(): Promise<CurrencyDto[]> {
+    const currencies = await this.currencyService.getAllCurrencies();
+    return currencies;
+  }
+
+  @Post('currencies')
+  @ApiOperation({ summary: 'Create new currency' })
+  @ApiBody({ type: CreateCurrencyDto })
+  @ApiOkResponse({ description: 'Created currency', type: CurrencyResponseDto })
+  async createCurrency(
+    @Body() createCurrencyDto: CreateCurrencyDto,
+  ): Promise<CurrencyDto> {
+    return this.currencyService.createCurrency(createCurrencyDto);
   }
 }

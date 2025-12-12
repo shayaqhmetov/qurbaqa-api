@@ -15,10 +15,6 @@ export class CreateAccountDto {
 
   @ApiProperty({ type: String })
   @IsString()
-  userId: string;
-
-  @ApiProperty({ type: String })
-  @IsString()
   currencyCode: string;
 
   @ApiProperty({ type: Number, required: false })
@@ -68,4 +64,9 @@ export class AccountResponseDto extends BaseApiResponse<AccountDto> {
 export class AccountsResponseDto extends BaseApiResponse<AccountDto[]> {
   @ApiProperty({ type: AccountDto, isArray: true })
   data: AccountDto[];
+}
+
+export class AccountTypesResponseDto extends BaseApiResponse<string[]> {
+  @ApiProperty({ type: String, isArray: true })
+  data: string[];
 }

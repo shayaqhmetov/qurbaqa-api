@@ -19,4 +19,9 @@ export default class CurrencyService {
     });
     return currency;
   }
+
+  async getAllCurrencies() {
+    const currencies = await this.prismaClient.currency.findMany();
+    return currencies;
+  }
 }

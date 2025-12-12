@@ -38,3 +38,8 @@ export class CurrencyResponseDto extends BaseApiResponse<CurrencyDto> {
   @ApiProperty({ type: CurrencyDto })
   data: CurrencyDto;
 }
+
+export class CurrenciesResponseDto extends BaseApiResponse<CurrencyDto[]> {
+  @ApiProperty({ type: [CurrencyDto] })
+  data: CurrencyDto[];
+}
