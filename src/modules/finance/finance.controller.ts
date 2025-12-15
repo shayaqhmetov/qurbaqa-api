@@ -25,6 +25,11 @@ import {
   CurrenciesResponseDto,
 } from './currency/currency.dto';
 import CurrencyService from './currency/currency.service';
+import {
+  EntityTypeField,
+  TranslatableFields,
+} from '@/interceptors/response.interceptor';
+import { TranslationEntityType } from '../translation/translation.dto';
 
 @ApiTags('finance')
 @Controller('finance')
@@ -34,7 +39,7 @@ export class FinanceController {
   constructor(
     protected readonly accountService: AccountService,
     protected readonly currencyService: CurrencyService,
-  ) {}
+  ) { }
 
   @Get('account/:id')
   @ApiOperation({ summary: 'Get account info by ID' })
@@ -89,6 +94,8 @@ export class FinanceController {
     description: 'List of currencies',
     type: CurrenciesResponseDto,
   })
+  @TranslatableFields('name')
+  @EntityTypeField(TranslationEntityType.Currency)
   async getCurrencies(): Promise<CurrencyDto[]> {
     const currencies = await this.currencyService.getAllCurrencies();
     return currencies;

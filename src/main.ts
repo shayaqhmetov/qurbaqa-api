@@ -1,12 +1,11 @@
 import { ValidationPipe, Logger } from '@nestjs/common';
-import { HttpAdapterHost, NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { networkInterfaces } from 'os';
 
 import { AppModule } from './app.module';
 import { CustomExceptionFilter } from './filters/base.exection-filter';
-import ResponseInterceptor from './response.interceptor';
-import { LocaleMiddleware } from './modules/translation/locale.middleware';
+import ResponseInterceptor from './interceptors/response.interceptor';
 import { LocalizationInterceptor } from './modules/translation/localization.interceptor';
 import {
   DocumentBuilder,
@@ -34,7 +33,8 @@ async function bootstrap() {
   const httpAdapter = app.get(HttpAdapterHost);
 
   app.useGlobalFilters(new CustomExceptionFilter(httpAdapter));
-  app.useGlobalInterceptors(new ResponseInterceptor());
+
+  app.useGlobalInterceptors(new ResponseInterceptor(app.get(Reflector)));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -42,7 +42,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.use(new LocaleMiddleware().use);
   // register global interceptor from module
   const localizationInterceptor = app.get(LocalizationInterceptor);
   app.useGlobalInterceptors(localizationInterceptor);

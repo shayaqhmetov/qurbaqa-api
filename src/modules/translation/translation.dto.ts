@@ -4,6 +4,7 @@ import { BaseApiResponse } from '@/dto';
 
 export enum TranslationEntityType {
   Module = 'Module',
+  Currency = 'Currency',
 }
 
 export class UpsertTranslationDto {
@@ -103,4 +104,10 @@ export class TranslatableEntitiesResponseDto extends BaseApiResponse<string[]> {
 export class LanguagesResponseDto extends BaseApiResponse<LanguageDto[]> {
   @ApiProperty({ type: [LanguageDto] })
   data: LanguageDto[];
+}
+
+export class TranslationFilterDto {
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  entityId?: string;
 }

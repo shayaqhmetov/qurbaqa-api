@@ -13,6 +13,10 @@ export class BaseApiResponse<T> implements ApiResponseType<T> {
   path: string;
   @ApiProperty({ type: Number })
   statusCode: number;
+  @ApiProperty({ type: [String], required: false })
+  translatableFields?: string[];
+  @ApiProperty({ type: String, required: false })
+  entityType?: string;
 }
 
 export class MessageDto {

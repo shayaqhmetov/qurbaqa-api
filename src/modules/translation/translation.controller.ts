@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { TranslationService } from './translation.service';
 import {
   LanguageDto,
   LanguagesResponseDto,
   TranslatableEntitiesResponseDto,
   TranslationDto,
+  TranslationFilterDto,
   TranslationResponseDto,
   TranslationsResponseDto,
   UpsertTranslationDto,
@@ -15,9 +16,8 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
-import { AccountDto } from '@/modules/finance/dtos/account.dto';
-import { BaseApiResponse } from '@/dto';
 
 @ApiTags('translation')
 @Controller('translation')
@@ -44,12 +44,15 @@ export default class TranslationController {
 
   @Get()
   @ApiOperation({ summary: 'Get all translations' })
+  @ApiQuery({ name: 'filter', required: false, type: TranslationFilterDto })
   @ApiOkResponse({
     description: 'All translations',
     type: TranslationsResponseDto,
   })
-  async getTranslations(): Promise<TranslationDto[]> {
-    return this.translationService.getAllTranslations();
+  async getTranslations(
+    @Query() filter?: TranslationFilterDto,
+  ): Promise<TranslationDto[]> {
+    return this.translationService.getAllTranslations(filter);
   }
 
   @Get('entities')
