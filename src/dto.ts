@@ -28,3 +28,11 @@ export class MessageResponseDto extends BaseApiResponse<MessageDto> {
   @ApiProperty({ type: MessageDto })
   data: MessageDto;
 }
+
+export class TranslationQueryDto {
+  @ApiProperty({ type: String })
+  entityType: string;
+
+  @ApiProperty({ type: String })
+  lang: string;
+}

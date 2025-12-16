@@ -12,7 +12,7 @@ import keycloakConfiguration from './configurations/keycloak.configuration';
 import { ModuleAccessGuard } from './modules/modules/module-access.guard';
 import { KeycloakGuard } from './keycloak/keycloak.guard';
 import configuration from './configurations/configuration';
-import { LocaleMiddleware } from './modules/translation/locale.middleware';
+import { LocaleMiddleware } from './interceptors/locale.middleware';
 
 @Module({
   imports: [

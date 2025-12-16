@@ -19,10 +19,6 @@ export class UpsertTranslationDto {
 
   @ApiProperty({ type: String })
   @IsNotEmpty()
-  field: string;
-
-  @ApiProperty({ type: String })
-  @IsNotEmpty()
   locale: string;
 
   @ApiProperty({ type: String })

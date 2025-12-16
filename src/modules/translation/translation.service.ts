@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import Redis from 'ioredis';
 import { Logger, Inject } from '@nestjs/common';
 
@@ -21,6 +22,16 @@ export class TranslationService {
     return `trans:${entityType}:${entityId}:${locale}`;
   }
 
+  /**
+   * Replaces placeholders in a template string with corresponding values from the provided parameters object.
+   *
+   * Placeholders in the template should be in the format `{key}`. If a key from the template is not found in the
+   * `params` object, the placeholder is left unchanged.
+   *
+   * @param template - The string containing placeholders to be replaced.
+   * @param params - An optional object mapping placeholder keys to their replacement values.
+   * @returns The template string with placeholders replaced by their corresponding values from `params`.
+   */
   private interpolate(template: string, params?: Record<string, any>) {
     if (!params) return template;
     return template.replace(/\{([^}]+)\}/g, (_, k) => {
@@ -39,8 +50,10 @@ export class TranslationService {
   ) {
     const cacheKey = `i18n:${locale}:${key}`;
     const cached = await this.redis.get(cacheKey);
+    console.log('TranslationService.t cacheKey:', cacheKey, 'cached:', cached);
     if (cached) return this.interpolate(JSON.parse(cached), params);
 
+    console.log(entityType, key, locale, 'TranslationService.t invoked');
     // try find translation row for ui
     const tr = await this.prisma.translation.findFirst({
       where: {
@@ -50,6 +63,7 @@ export class TranslationService {
         locale,
       },
     });
+    console.log('TranslationService.t invoked', tr);
 
     let value = tr?.value;
     if (!value && fallback) {
@@ -69,29 +83,102 @@ export class TranslationService {
   }
 
   // batch fetch translations for many entityIds and fields + locales
-  async batchFetchTranslations(opts: {
-    entityType: TranslationEntityType;
-    entityIds: string[]; // stringified ids
-    fields: string[];
-    locales: string[]; // ordered preferred locales
-  }) {
+  async batchFetchTranslations(
+    opts: {
+      entityType: TranslationEntityType;
+      entityIds: string[];
+      fields: string[];
+      locales: string[];
+    },
+    inifinityCache = false,
+  ) {
     const { entityType, entityIds, fields, locales } = opts;
-    if (!entityIds.length) return {};
+    if (!entityIds.length || !fields.length || !locales.length) return {};
 
-    const rows = await this.prisma.translation.findMany({
-      where: {
-        entityType,
-        entityId: { in: entityIds },
-        field: { in: fields },
-        locale: { in: locales },
-      },
-    });
+    // Build redis keys per entityId+locale
+    const keys: { entityId: string; locale: string; key: string }[] = [];
+    for (const id of entityIds) {
+      for (const loc of locales) {
+        keys.push({
+          entityId: id,
+          locale: loc,
+          key: this.cacheKey(entityType, id, loc),
+        });
+      }
+    }
+
+    // Try Redis first (pipeline)
+    const pipe = this.redis.pipeline();
+    for (const k of keys) pipe.get(k.key);
+    const redisResults = await pipe.exec();
 
     const map: Record<string, Record<string, Record<string, string>>> = {};
-    for (const r of rows) {
-      map[r.entityId] ??= {};
-      map[r.entityId][r.locale] ??= {};
-      map[r.entityId][r.locale][r.field] = r.value;
+    const missing: { entityId: string; locale: string }[] = [];
+
+    keys.forEach((k, i) => {
+      const [, val] = redisResults[i] ?? [];
+      if (val) {
+        try {
+          const parsed = JSON.parse(val as string) as Record<string, string>;
+          map[k.entityId] ??= {};
+          map[k.entityId][k.locale] = parsed;
+        } catch {
+          missing.push({ entityId: k.entityId, locale: k.locale });
+        }
+      } else {
+        missing.push({ entityId: k.entityId, locale: k.locale });
+      }
+    });
+
+    // Fetch missing from DB in a single query
+    if (missing.length) {
+      const missingIds = Array.from(new Set(missing.map((m) => m.entityId)));
+      const missingLocales = Array.from(new Set(missing.map((m) => m.locale)));
+
+      const rows = await this.prisma.translation.findMany({
+        where: {
+          entityType,
+          entityId: { in: missingIds },
+          field: { in: fields },
+          locale: { in: missingLocales },
+        },
+      });
+
+      // Group rows and write back to Redis
+      const grouped: Record<
+        string,
+        Record<string, Record<string, string>>
+      > = {};
+      for (const r of rows) {
+        grouped[r.entityId] ??= {};
+        grouped[r.entityId][r.locale] ??= {};
+        grouped[r.entityId][r.locale][r.field] = r.value;
+      }
+
+      const writePipe = this.redis.pipeline();
+      for (const id of missingIds) {
+        for (const loc of missingLocales) {
+          const payload = grouped[id]?.[loc] ?? {};
+          if (Object.keys(payload).length) {
+            if (inifinityCache) {
+              writePipe.set(
+                this.cacheKey(entityType, id, loc),
+                JSON.stringify(payload)
+              );
+            } else {
+              writePipe.set(
+                this.cacheKey(entityType, id, loc),
+                JSON.stringify(payload),
+                'EX',
+                300
+              );
+            }
+            map[id] ??= {};
+            map[id][loc] = payload;
+          }
+        }
+      }
+      await writePipe.exec();
     }
 
     return map;
@@ -126,7 +213,7 @@ export class TranslationService {
     const data = {
       entityType: payload.entityType,
       entityId: idString,
-      field: payload.field,
+      field: 'value',
       locale: payload.locale,
       value: payload.value,
       source: payload.source ?? 'manual',

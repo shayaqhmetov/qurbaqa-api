@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req } from '@nestjs/common';
 import { TranslationService } from './translation.service';
 import {
   LanguageDto,
@@ -18,6 +18,9 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Public } from '@/decorators/public.decorator';
+import { LocalizationInterceptor } from '../../interceptors/localization.interceptor';
+import { TranslationQueryDto } from '@/dto';
 
 @ApiTags('translation')
 @Controller('translation')
@@ -49,6 +52,7 @@ export default class TranslationController {
     description: 'All translations',
     type: TranslationsResponseDto,
   })
+  @Public()
   async getTranslations(
     @Query() filter?: TranslationFilterDto,
   ): Promise<TranslationDto[]> {
@@ -61,7 +65,11 @@ export default class TranslationController {
     description: 'Translatable entities',
     type: TranslatableEntitiesResponseDto,
   })
-  async getTranslatableEntities(): Promise<string[]> {
+  @UseInterceptors(LocalizationInterceptor)
+  async getTranslatableEntities(
+    @Query() query: TranslationQueryDto,
+    @Req() req,
+  ): Promise<string[]> {
     return this.translationService.getTranslatableEntities();
   }
 }

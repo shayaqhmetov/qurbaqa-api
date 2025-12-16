@@ -6,7 +6,7 @@ import { networkInterfaces } from 'os';
 import { AppModule } from './app.module';
 import { CustomExceptionFilter } from './filters/base.exection-filter';
 import ResponseInterceptor from './interceptors/response.interceptor';
-import { LocalizationInterceptor } from './modules/translation/localization.interceptor';
+import { LocalizationInterceptor } from './interceptors/localization.interceptor';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
@@ -42,10 +42,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  // register global interceptor from module
-  const localizationInterceptor = app.get(LocalizationInterceptor);
-  app.useGlobalInterceptors(localizationInterceptor);
-
+  
   const docConfig = new DocumentBuilder()
     .setTitle(config.get<string>('SWAGGER_TITLE') ?? 'API Documentation')
     .setDescription(

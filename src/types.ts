@@ -1,5 +1,3 @@
-// Avoid importing from translation DTOs to prevent circular dependencies
-
 export interface ApiResponseType<T> {
   success: boolean;
   message: string;

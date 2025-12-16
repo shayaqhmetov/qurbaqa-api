@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseInterceptors,
+} from '@nestjs/common';
 import AccountService from './account.service';
 import {
   AccountDto,
@@ -25,11 +35,11 @@ import {
   CurrenciesResponseDto,
 } from './currency/currency.dto';
 import CurrencyService from './currency/currency.service';
-import {
-  EntityTypeField,
-  TranslatableFields,
-} from '@/interceptors/response.interceptor';
 import { TranslationEntityType } from '../translation/translation.dto';
+import { LocalizationInterceptor } from '@/interceptors/localization.interceptor';
+import { TranslationService } from '../translation/translation.service';
+import { EntityTypeField, TranslatableFields } from '@/metadata';
+import { TRANSLATABLE_FIELDS } from '../translation/translation.constants';
 
 @ApiTags('finance')
 @Controller('finance')
@@ -39,6 +49,7 @@ export class FinanceController {
   constructor(
     protected readonly accountService: AccountService,
     protected readonly currencyService: CurrencyService,
+    protected readonly translationService: TranslationService,
   ) { }
 
   @Get('account/:id')
@@ -94,17 +105,24 @@ export class FinanceController {
     description: 'List of currencies',
     type: CurrenciesResponseDto,
   })
-  @TranslatableFields('name')
+  @TranslatableFields(TRANSLATABLE_FIELDS.Currency)
   @EntityTypeField(TranslationEntityType.Currency)
-  async getCurrencies(): Promise<CurrencyDto[]> {
+  @UseInterceptors(LocalizationInterceptor)
+  async getCurrencies(@Query() query, @Req() req): Promise<CurrencyDto[]> {
     const currencies = await this.currencyService.getAllCurrencies();
-    return currencies;
+    if (!req.translate) {
+      return currencies;
+    }
+    const result = await req.translate(currencies, ['name']);
+    return result;
   }
 
   @Post('currencies')
   @ApiOperation({ summary: 'Create new currency' })
   @ApiBody({ type: CreateCurrencyDto })
   @ApiOkResponse({ description: 'Created currency', type: CurrencyResponseDto })
+  @EntityTypeField(TranslationEntityType.Currency)
+  @UseInterceptors(LocalizationInterceptor)
   async createCurrency(
     @Body() createCurrencyDto: CreateCurrencyDto,
   ): Promise<CurrencyDto> {

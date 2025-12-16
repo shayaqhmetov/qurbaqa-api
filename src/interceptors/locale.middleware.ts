@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
-const SUPPORTED_LOCALES = ['en', 'ru', 'es', 'fr'];
+const SUPPORTED_LOCALES = ['en', 'kz', 'ru', 'thai'];
 
 @Injectable()
 export class LocaleMiddleware implements NestMiddleware {

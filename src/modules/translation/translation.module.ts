@@ -3,7 +3,7 @@ import { RedisModule } from '@/redis/redis.module';
 import { TranslationService } from './translation.service';
 import TranslationController from './translation.controller';
 import { PrismaClientService } from '@/clients/prisma.client';
-import { LocalizationInterceptor } from './localization.interceptor';
+import { LocalizationInterceptor } from '../../interceptors/localization.interceptor';
 
 @Global()
 @Module({

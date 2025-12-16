@@ -3,27 +3,17 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
-  SetMetadata,
 } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
 import { ApiResponseType } from '../types';
 import { Reflector } from '@nestjs/core';
 import { TranslationEntityType } from '@/modules/translation/translation.dto';
-
-export const TRANSLATABLE_FIELDS = 'translatable_fields';
-export const ENTITY_TYPE = 'entity_type';
-
-export const TranslatableFields = (...fields: string[]) =>
-  SetMetadata(TRANSLATABLE_FIELDS, fields);
-
-export const EntityTypeField = (entityType: TranslationEntityType) =>
-  SetMetadata(ENTITY_TYPE, entityType);
+import { ENTITY_TYPE_KEY, TRANSLATABLE_FIELDS_KEY } from '@/constants';
 
 @Injectable()
 export default class ResponseInterceptor<T>
-  implements NestInterceptor<T, ApiResponseType<T>>
-{
-  constructor(private reflector: Reflector) {}
+  implements NestInterceptor<T, ApiResponseType<T>> {
+  constructor(private reflector: Reflector) { }
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -40,15 +30,15 @@ export default class ResponseInterceptor<T>
         let responseData = data;
 
         const fields =
-          this.reflector.getAllAndOverride<string[]>(TRANSLATABLE_FIELDS, [
+          this.reflector.getAllAndOverride<string[]>(TRANSLATABLE_FIELDS_KEY, [
             context.getHandler(),
             context.getClass(),
           ]) ?? [];
         const entityType =
-          this.reflector.getAllAndOverride<TranslationEntityType>(ENTITY_TYPE, [
-            context.getHandler(),
-            context.getClass(),
-          ]);
+          this.reflector.getAllAndOverride<TranslationEntityType>(
+            ENTITY_TYPE_KEY,
+            [context.getHandler(), context.getClass()],
+          );
 
         // If data has a custom message, extract it
         if (data && typeof data === 'object' && 'message' in data) {
