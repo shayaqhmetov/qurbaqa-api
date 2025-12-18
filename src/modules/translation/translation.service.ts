@@ -44,6 +44,7 @@ export class TranslationService {
   async t(
     locale: string,
     key: string,
+    field: string,
     entityType: TranslationEntityType,
     params?: Record<string, any>,
     fallback = 'en',
@@ -59,7 +60,7 @@ export class TranslationService {
       where: {
         entityType,
         entityId: key,
-        field: 'value',
+        field,
         locale,
       },
     });
@@ -71,7 +72,7 @@ export class TranslationService {
         where: {
           entityType,
           entityId: key,
-          field: 'value',
+          field,
           locale: fallback,
         },
       });
@@ -213,7 +214,7 @@ export class TranslationService {
     const data = {
       entityType: payload.entityType,
       entityId: idString,
-      field: 'value',
+      field: payload.field,
       locale: payload.locale,
       value: payload.value,
       source: payload.source ?? 'manual',
@@ -260,5 +261,25 @@ export class TranslationService {
   async getTranslatableEntities() {
     // currently hardcoded, could be dynamic in future
     return [TranslationEntityType.Module];
+  }
+
+  async deleteTranslation(id: string): Promise<void> {
+    const translation = await this.prisma.translation.findUnique({
+      where: { id },
+    });
+    
+    // soft delete
+    if (translation) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.translation.delete({ where: { id } });
+        await this.redis.del(
+          this.cacheKey(
+            translation.entityType,
+            translation.entityId,
+            translation.locale,
+          ),
+        );
+      });
+    }
   }
 }

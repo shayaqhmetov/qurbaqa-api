@@ -23,6 +23,10 @@ export class UpsertTranslationDto {
 
   @ApiProperty({ type: String })
   @IsNotEmpty()
+  field: string;
+
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
   value: string;
 
   @ApiProperty({ type: String, required: false })
@@ -80,6 +84,9 @@ export class TranslationDto {
   @ApiProperty({ type: Date })
   @IsNotEmpty()
   updatedAt: Date;
+
+  @ApiProperty({ type: Date })
+  deletedAt: Date;
 }
 
 export class TranslationResponseDto extends BaseApiResponse<TranslationDto> {

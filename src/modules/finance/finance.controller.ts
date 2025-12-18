@@ -26,6 +26,7 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { $Enums } from 'generated/prisma';
 import {
@@ -108,7 +109,8 @@ export class FinanceController {
   @TranslatableFields(TRANSLATABLE_FIELDS.Currency)
   @EntityTypeField(TranslationEntityType.Currency)
   @UseInterceptors(LocalizationInterceptor)
-  async getCurrencies(@Query() query, @Req() req): Promise<CurrencyDto[]> {
+  @ApiQuery({ name: 'lang', required: false, description: 'Language code for localization' })
+  async getCurrencies(@Req() req): Promise<CurrencyDto[]> {
     const currencies = await this.currencyService.getAllCurrencies();
     if (!req.translate) {
       return currencies;

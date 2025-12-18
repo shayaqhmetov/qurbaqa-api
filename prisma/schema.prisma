@@ -352,6 +352,7 @@ model Translation {
   source      String   @default("manual") @db.Text
   isProofread Boolean  @default(false)
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@unique([entityType, entityId, field, locale], name: "uq_trans_entity_field_locale")
   @@index([entityType, entityId], name: "idx_trans_entity")

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req, Delete } from '@nestjs/common';
 import { TranslationService } from './translation.service';
 import {
   LanguageDto,
@@ -17,10 +17,11 @@ import {
   ApiOkResponse,
   ApiBody,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { Public } from '@/decorators/public.decorator';
 import { LocalizationInterceptor } from '../../interceptors/localization.interceptor';
-import { TranslationQueryDto } from '@/dto';
+import { MessageDto, MessageResponseDto, TranslationQueryDto } from '@/dto';
 
 @ApiTags('translation')
 @Controller('translation')
@@ -31,6 +32,7 @@ export default class TranslationController {
   @Get('lang')
   @ApiOperation({ summary: 'Get available languages' })
   @ApiOkResponse({ description: 'Account info', type: LanguagesResponseDto })
+  @Public()
   async getLanguages(): Promise<LanguageDto[]> {
     return this.translationService.getLanguages();
   }
@@ -71,5 +73,17 @@ export default class TranslationController {
     @Req() req,
   ): Promise<string[]> {
     return this.translationService.getTranslatableEntities();
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a translation by ID' })
+  @ApiOkResponse({
+    description: 'Translation deleted successfully',
+    type: MessageResponseDto,
+  })
+  @ApiParam({ name: 'id', type: String })
+  async deleteTranslation(@Param('id') id: string): Promise<MessageDto> {
+    await this.translationService.deleteTranslation(id);
+    return { message: 'Translation deleted successfully' };
   }
 }
