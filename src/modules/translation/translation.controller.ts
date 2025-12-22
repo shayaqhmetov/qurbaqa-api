@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req, Delete, Put, Patch } from '@nestjs/common';
 import { TranslationService } from './translation.service';
 import {
   LanguageDto,
   LanguagesResponseDto,
+  PartialUpsertTranslationDto,
   TranslatableEntitiesResponseDto,
   TranslationDto,
   TranslationFilterDto,
@@ -85,5 +86,20 @@ export default class TranslationController {
   async deleteTranslation(@Param('id') id: string): Promise<MessageDto> {
     await this.translationService.deleteTranslation(id);
     return { message: 'Translation deleted successfully' };
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Partially update a translation by ID' })
+  @ApiBody({ type: PartialUpsertTranslationDto })
+  @ApiOkResponse({
+    description: 'Updated translation',
+    type: TranslationResponseDto,
+  })
+  @ApiParam({ name: 'id', type: String })
+  async updateTranslation(
+    @Param('id') id: string,
+    @Body() dto: PartialUpsertTranslationDto,
+  ): Promise<TranslationDto> {
+    return this.translationService.partialUpdateTranslation(id, dto);
   }
 }

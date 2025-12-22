@@ -38,6 +38,37 @@ export class UpsertTranslationDto {
   isProofread?: boolean;
 }
 
+export class PartialUpsertTranslationDto {
+  @ApiProperty({ enum: TranslationEntityType, required: false })
+  @IsEnum(TranslationEntityType)
+  @IsOptional()
+  entityType?: TranslationEntityType;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  entityId?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  locale?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  field?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  value?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  source?: string;
+
+  @ApiProperty({ type: Boolean, required: false })
+  @IsOptional()
+  isProofread?: boolean;
+}
+
 export class LanguageDto {
   @ApiProperty({ type: String })
   @IsNotEmpty()

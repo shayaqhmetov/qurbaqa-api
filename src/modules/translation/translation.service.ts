@@ -10,6 +10,7 @@ import {
   TranslationFilterDto,
   UpsertTranslationDto,
 } from './translation.dto';
+import { MESSAGES } from './translation.constants';
 @Injectable()
 export class TranslationService {
   private readonly logger = new Logger(TranslationService.name);
@@ -267,7 +268,7 @@ export class TranslationService {
     const translation = await this.prisma.translation.findUnique({
       where: { id },
     });
-    
+
     // soft delete
     if (translation) {
       await this.prisma.$transaction(async (tx) => {
@@ -281,5 +282,39 @@ export class TranslationService {
         );
       });
     }
+  }
+
+  async partialUpdateTranslation(id: string, dto: Partial<UpsertTranslationDto>) {
+    const existing = await this.prisma.translation.findUnique({ where: { id } });
+    if (!existing) {
+      throw new Error(MESSAGES.TRANSLATION_NOT_FOUND);
+    }
+
+    if(Object.keys(dto).length === 0) {
+      return existing;
+    }
+
+    const updated = await this.prisma.translation.update({
+      where: { id },
+      data: {
+        entityType: dto.entityType ?? existing.entityType,
+        entityId: dto.entityId ? String(dto.entityId) : existing.entityId,
+        field: dto.field ?? existing.field,
+        locale: dto.locale ?? existing.locale,
+        value: dto.value ?? existing.value,
+        source: dto.source ?? existing.source,
+        isProofread: dto.isProofread ?? existing.isProofread,
+      },
+    });
+
+    await this.redis.del(
+      this.cacheKey(
+        updated.entityType,
+        updated.entityId,
+        updated.locale,
+      ),
+    );
+    
+    return updated;
   }
 }
