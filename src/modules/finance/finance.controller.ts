@@ -4,8 +4,9 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
-  Query,
+  Put,
   Req,
   UseInterceptors,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
   AccountDto,
   CreateAccountDto,
   AccountResponseDto,
+  AccountTypeDataDto,
   AccountsResponseDto,
   AccountTypesResponseDto,
 } from './dtos/account.dto';
@@ -34,6 +36,7 @@ import {
   CreateCurrencyDto,
   CurrencyResponseDto,
   CurrenciesResponseDto,
+  UpdateCurrencyDto,
 } from './currency/currency.dto';
 import CurrencyService from './currency/currency.service';
 import { TranslationEntityType } from '../translation/translation.dto';
@@ -41,6 +44,10 @@ import { LocalizationInterceptor } from '@/interceptors/localization.interceptor
 import { TranslationService } from '../translation/translation.service';
 import { EntityTypeField, TranslatableFields } from '@/metadata';
 import { TRANSLATABLE_FIELDS } from '../translation/translation.constants';
+import { translations } from "@/i18n/";
+import { QueryLangDto } from '@/dto';
+import FinanceService from './finance.service';
+import { DEFAULT_LOCALE } from '@/constants';
 
 @ApiTags('finance')
 @Controller('finance')
@@ -51,12 +58,15 @@ export class FinanceController {
     protected readonly accountService: AccountService,
     protected readonly currencyService: CurrencyService,
     protected readonly translationService: TranslationService,
+    protected readonly financeService: FinanceService,
   ) { }
 
-  @Get('account/:id')
+  @Get('accounts/:id')
   @ApiOperation({ summary: 'Get account info by ID' })
   @ApiParam({ name: 'id', description: 'Account ID' })
   @ApiOkResponse({ description: 'Account info', type: AccountResponseDto })
+  @TranslatableFields(TRANSLATABLE_FIELDS.Account)
+  @EntityTypeField(TranslationEntityType.Account)
   async getAccountInfo(@Param() params: { id: string }): Promise<AccountDto> {
     const account = await this.accountService.getAccountById(params.id);
     return account;
@@ -68,15 +78,21 @@ export class FinanceController {
     description: 'List of accounts',
     type: AccountsResponseDto,
   })
-  async getAccounts(): Promise<AccountDto[]> {
+  @TranslatableFields(TRANSLATABLE_FIELDS.Account)
+  @EntityTypeField(TranslationEntityType.Account)
+  @UseInterceptors(LocalizationInterceptor)
+  @ApiQuery({ name: 'lang', required: false, description: 'Language code for localization' })
+  async getAccounts(@Req() req: QueryLangDto): Promise<AccountDto[]> {
     const accounts = await this.accountService.getAllAccounts();
-    return accounts;
+    return await this.financeService.translateEntities<AccountDto>(req, accounts, TRANSLATABLE_FIELDS.Account);
   }
 
-  @Post('account')
+  @Post('accounts')
   @ApiOperation({ summary: 'Create new account' })
   @ApiBody({ type: CreateAccountDto })
   @ApiOkResponse({ description: 'Created account', type: AccountResponseDto })
+  @TranslatableFields(TRANSLATABLE_FIELDS.Account)
+  @EntityTypeField(TranslationEntityType.Account)
   async createAccount(
     @CurrentUser() user: any,
     @Body() createAccountDto: CreateAccountDto,
@@ -95,8 +111,24 @@ export class FinanceController {
     description: 'List of account types',
     type: AccountTypesResponseDto,
   })
-  async getAccountTypes(): Promise<string[]> {
-    const types = Object.values($Enums.AccountType);
+  @TranslatableFields(TRANSLATABLE_FIELDS.AccountType)
+  @EntityTypeField(TranslationEntityType.AccountType)
+  @UseInterceptors(LocalizationInterceptor)
+  @ApiQuery({ name: 'lang', required: false, description: 'Language code for localization' })
+  async getAccountTypes(@Req() req): Promise<AccountTypeDataDto[]> {
+    const locale = req.locale;
+    let types = Object.values($Enums.AccountType).map((type) => ({
+      type: type,
+      name: type,
+    }));
+    if (translations[locale] && translations[locale].accountType) {
+      types = Object.keys(translations[locale].accountType).map((translationKEY: $Enums.AccountType) => {
+        return {
+          type: translationKEY,
+          name: translations[locale].accountType[translationKEY],
+        }
+      });
+    }
     return types;
   }
 
@@ -110,18 +142,14 @@ export class FinanceController {
   @EntityTypeField(TranslationEntityType.Currency)
   @UseInterceptors(LocalizationInterceptor)
   @ApiQuery({ name: 'lang', required: false, description: 'Language code for localization' })
-  async getCurrencies(@Req() req): Promise<CurrencyDto[]> {
+  async getCurrencies(@Req() req: QueryLangDto): Promise<CurrencyDto[]> {
     const currencies = await this.currencyService.getAllCurrencies();
-    if (!req.translate) {
-      return currencies;
-    }
-    const result = await req.translate(currencies, ['name']);
-    return result;
+    return await this.financeService.translateEntities<CurrencyDto>(req, currencies, TRANSLATABLE_FIELDS.Currency);
   }
 
   @Post('currencies')
   @ApiOperation({ summary: 'Create new currency' })
-  @ApiBody({ type: CreateCurrencyDto })
+  @ApiBody({ type: UpdateCurrencyDto })
   @ApiOkResponse({ description: 'Created currency', type: CurrencyResponseDto })
   @EntityTypeField(TranslationEntityType.Currency)
   @UseInterceptors(LocalizationInterceptor)
@@ -129,5 +157,32 @@ export class FinanceController {
     @Body() createCurrencyDto: CreateCurrencyDto,
   ): Promise<CurrencyDto> {
     return this.currencyService.createCurrency(createCurrencyDto);
+  }
+
+
+  @Patch('currencies/:id')
+  @ApiOperation({ summary: 'Update currency by ID' })
+  @ApiQuery({ name: 'lang', required: false, description: 'Language code for localization' })
+  @ApiParam({ name: 'id', description: 'Currency ID' })
+  @ApiBody({ type: UpdateCurrencyDto })
+  @ApiOkResponse({ description: 'Updated currency', type: CurrencyResponseDto })
+  @EntityTypeField(TranslationEntityType.Currency)
+  @UseInterceptors(LocalizationInterceptor)
+  async updateCurrency(
+    @Req() req: QueryLangDto,
+    @Param() params: { id: string },
+    @Body() updateCurrencyDto: UpdateCurrencyDto,
+  ): Promise<CurrencyDto> {
+    const updatedCurrency =  await this.currencyService.patchCurrency(
+      params.id,
+      req.locale || DEFAULT_LOCALE,
+      updateCurrencyDto,
+    );
+    const result = await this.financeService.translateEntity<CurrencyDto>(
+      req,
+      updatedCurrency,
+      TRANSLATABLE_FIELDS.Currency,
+    );
+    return result;
   }
 }

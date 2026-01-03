@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Query, UseInterceptors, Param, Req, Delete, Put, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  UseInterceptors,
+  Param,
+  Req,
+  Delete,
+  Patch,
+} from '@nestjs/common';
 import { TranslationService } from './translation.service';
 import {
   LanguageDto,

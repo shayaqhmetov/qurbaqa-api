@@ -14,3 +14,8 @@ export const MODULES_MESSAGES = {
   MODULE_TYPE_EXISTS: (moduleType: string) =>
     `Module of type ${moduleType} already exists`,
 };
+
+export const CURRENCY_MESSAGE = {
+  CURRENCY_NOT_FOUND: (currencyId: string) =>
+    `Currency with id ${currencyId} not found`,
+};

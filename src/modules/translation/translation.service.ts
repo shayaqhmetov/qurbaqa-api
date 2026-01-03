@@ -145,6 +145,7 @@ export class TranslationService {
           locale: { in: missingLocales },
         },
       });
+      console.log(entityType, missingIds, fields, missingLocales, 'fetched translations:', rows);
 
       // Group rows and write back to Redis
       const grouped: Record<

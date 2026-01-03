@@ -1,5 +1,5 @@
 import { IsEnum, IsString, IsDecimal } from 'class-validator';
-import { AccountType } from 'generated/prisma';
+import { $Enums, AccountType } from 'generated/prisma';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseApiResponse } from '@/dto';
 import { Decimal } from 'generated/prisma/runtime/library';
@@ -66,7 +66,16 @@ export class AccountsResponseDto extends BaseApiResponse<AccountDto[]> {
   data: AccountDto[];
 }
 
-export class AccountTypesResponseDto extends BaseApiResponse<string[]> {
-  @ApiProperty({ type: String, isArray: true })
-  data: string[];
+export class AccountTypeDataDto {
+  @ApiProperty({ type: String, isArray: false })
+  type: string;
+  @ApiProperty({ type: String, isArray: false })
+  name: string;
+}
+
+export class AccountTypesResponseDto extends BaseApiResponse<
+  AccountTypeDataDto[]
+> {
+  @ApiProperty({ type: AccountTypeDataDto, isArray: true })
+  data: AccountTypeDataDto[];
 }

@@ -5,6 +5,7 @@ import AccountService from './account.service';
 import { UserService } from '@/modules/auth/user/user.service';
 import { KeycloakAdminService } from '@/keycloak/keycloak.service';
 import CurrencyModule from './currency/currency.module';
+import FinanceService from './finance.service';
 
 @Module({
   imports: [CurrencyModule],
@@ -14,6 +15,7 @@ import CurrencyModule from './currency/currency.module';
     AccountService,
     UserService,
     KeycloakAdminService,
+    FinanceService,
   ],
 })
 export class FinanceModule { }

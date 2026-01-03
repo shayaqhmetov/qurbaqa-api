@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseApiResponse } from '@/dto';
 
@@ -14,6 +14,23 @@ export class CreateCurrencyDto {
   @ApiProperty({ type: String })
   @IsString()
   symbol: string;
+}
+
+export class UpdateCurrencyDto {
+  @ApiProperty({ type: String, required: false })
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsString()
+  @IsOptional()
+  symbol?: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsString()
+  @IsOptional()
+  code?: string;
 }
 
 export class CurrencyDto {

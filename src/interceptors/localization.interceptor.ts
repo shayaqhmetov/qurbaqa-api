@@ -20,10 +20,10 @@ export class LocalizationInterceptor implements NestInterceptor {
     private reflector: Reflector,
   ) {}
 
-  async translate<T extends { id: string }>(entities: T[], locale: string, fields: string[]): Promise<T[]> {
+  async translate<T extends { id: string }>(entities: T[], locale: string, fields: string[], entityType: TranslationEntityType): Promise<T[]> {
     const translationMap = await this.translationService.batchFetchTranslations(
       {
-        entityType: TranslationEntityType.Currency,
+        entityType,
         entityIds: entities.map((c) => c.id.toString()),
         fields,
         locales: [locale],
@@ -49,7 +49,7 @@ export class LocalizationInterceptor implements NestInterceptor {
     // attach helper
 
     req.translate = (entities, fields) =>
-      this.translate(entities, locale, fields);
+      this.translate(entities, locale, fields, entityType);
     // pass through — heavy localization of response should be explicit in services/controllers
     return next.handle().pipe(map((x) => x));
   }

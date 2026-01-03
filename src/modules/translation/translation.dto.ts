@@ -5,6 +5,8 @@ import { BaseApiResponse } from '@/dto';
 export enum TranslationEntityType {
   Module = 'Module',
   Currency = 'Currency',
+  AccountType = 'AccountType',
+  Account = 'Account',
 }
 
 export class UpsertTranslationDto {

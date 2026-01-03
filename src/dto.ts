@@ -36,3 +36,9 @@ export class TranslationQueryDto {
   @ApiProperty({ type: String })
   lang: string;
 }
+
+export class QueryLangDto {
+  @ApiProperty({ type: String, required: false })
+  locale?: string;
+  translate?: (items: any[], fields: string[]) => Promise<any[]>;
+}
